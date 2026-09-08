@@ -22,6 +22,7 @@ import { billingErrorMessage, billingTransactionLabel } from './billingErrors';
 import { LicenseModal } from './LicenseModal';
 import { BillingTaxCard } from './BillingTaxCard';
 import { NoticeDeliveryLine } from './NoticeDelivery';
+import { smtpErrorSummary } from '../email/smtpErrors';
 import {
   CreditCard,
   AlertTriangle,
@@ -312,9 +313,11 @@ export const BillingPage: React.FC = () => {
           t('billing.testNoticeNoOwner', 'nessun titolare o admin con indirizzo email')
         );
       } else {
+        // The plain explanation, not the raw SMTP line: the toast is where
+        // somebody decides what to do next, and "535 5.7.0" tells them nothing.
         parts.push(
           t('billing.testNoticeOwnerFailed', 'email al titolare non riuscita: {{error}}', {
-            error: res.ownerError || '',
+            error: smtpErrorSummary(res.ownerError, t) || res.ownerError || '',
           })
         );
       }
@@ -1168,8 +1171,20 @@ export const BillingPage: React.FC = () => {
         <BillingTaxCard
           tax={overview?.tax ?? null}
           canSync
-          monthlyNet={licensedMonthlyTotal}
-          monthlyTax={billedMonthlyTaxTotal}
+          // The same quantities and prices the summary above is billed on, so
+          // the worked example cannot disagree with the total beside it.
+          lines={[
+            {
+              label: t('billing.employeeLicenses', 'Licenze dipendenti'),
+              qty: hasSubscription ? licensedEmployees : liveEmployees,
+              unitPrice: employeePrice,
+            },
+            {
+              label: t('billing.terminalLicenses', 'Licenze terminali'),
+              qty: hasSubscription ? licensedTerminals : liveDevices,
+              unitPrice: devicePrice,
+            },
+          ]}
           currency={companyCurrency}
           onSynced={() => fetchOverview(selectedCompanyId)}
         />

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Percent, RefreshCw, AlertTriangle, CheckCircle2, Save } from 'lucide-react';
+import { Percent, RefreshCw, AlertTriangle, CheckCircle2, Save, Info } from 'lucide-react';
 import billingApi from '../../api/billing';
 import { formatMoney } from '../../constants/currencies';
 import { useToast } from '../../context/ToastContext';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { taxWorkings } from './taxMath';
 import type { BillingTaxRate } from '../../types';
 
 /**
@@ -27,16 +28,15 @@ export const BillingTaxCard: React.FC<{
   tax: BillingTaxRate | null;
   canSync: boolean;
   onSynced?: (tax: BillingTaxRate) => void;
-  /** The company's current monthly licence cost, for the worked example. */
-  monthlyNet?: number;
   /**
-   * The tax on it, worked out per invoice line by the caller. Passed in rather
-   * than recomputed here because both providers tax each line and then add up,
-   * and taxing the rounded total instead can land a cent away from the invoice.
+   * The invoice lines this company is billed on, so the example below can show
+   * the arithmetic instead of only its result. Taxed line by line because that
+   * is how both providers build an invoice - taxing the rounded total instead
+   * can land a cent away from what is actually charged.
    */
-  monthlyTax?: number;
+  lines?: { label: string; qty: number; unitPrice: number }[];
   currency?: string;
-}> = ({ tax, canSync, onSynced, monthlyNet = 0, monthlyTax, currency = 'EUR' }) => {
+}> = ({ tax, canSync, onSynced, lines = [], currency = 'EUR' }) => {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const [syncing, setSyncing] = useState(false);
@@ -121,11 +121,13 @@ export const BillingTaxCard: React.FC<{
       })
     : null;
 
-  // The caller's per-line figure when it has one; otherwise rounded to whole
-  // cents the same way the server does, so this matches the invoice rather
-  // than approximating it.
-  const exampleTax =
-    monthlyTax !== undefined ? monthlyTax : rate ? Math.round(monthlyNet * rate.percent) / 100 : 0;
+  // Derived from the same quantities and prices the subscription is billed on,
+  // rounded the way the server rounds. Nothing is passed in pre-computed, so
+  // what the reader adds up by hand is what the code adds up.
+  const sums = taxWorkings(lines, rate?.percent ?? 0);
+  const workings = sums.lines;
+  const monthlyNet = sums.net;
+  const exampleTax = sums.tax;
 
   const row: React.CSSProperties = {
     display: 'flex',
@@ -269,6 +271,29 @@ export const BillingTaxCard: React.FC<{
               })}
             </div>
           )}
+
+          {/* Which Stripe feature this is, because the dashboard has two and
+              only one of them is what the client asked for. Stripe Tax needs
+              an account activation and calculates rates automatically; a Tax
+              Rate is a fixed percentage created by hand and needs nothing
+              activated. Getting this wrong costs an afternoon. */}
+          <div style={syncNote}>
+            <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+            <div>
+              {t(
+                'billing.taxWhereInStripe',
+                'Questa è un’aliquota fissa creata a mano in Stripe → Catalogo prodotti → Aliquote fiscali. NON è Stripe Tax: non serve attivare Stripe Tax né alcun account aggiuntivo. Imposta il tipo su “Esclusiva”.'
+              )}{' '}
+              <a
+                href="https://dashboard.stripe.com/test/tax-rates"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--accent)', fontWeight: 600 }}
+              >
+                {t('billing.taxOpenStripeRates', 'Apri le aliquote fiscali su Stripe')}
+              </a>
+            </div>
+          </div>
 
           {/* How the two providers actually get the rate. Asked often enough
               to be worth stating on the page: Stripe is read automatically,
@@ -423,7 +448,32 @@ export const BillingTaxCard: React.FC<{
               >
                 {t('billing.taxExampleTitle', 'Calcolo sul canone mensile attuale')}
               </div>
-              <div style={exampleRow}>
+
+              {/* The working, not just the answer. Each line shows quantity x
+                  unit price, and the tax on that line, so the total underneath
+                  can be checked by hand - which is the only way anybody can be
+                  sure the figure is right. */}
+              {workings.map((line) => (
+                <div key={line.label} style={{ marginBottom: 6 }}>
+                  <div style={exampleRow}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      {line.label}: {line.qty} × {formatMoney(line.unitPrice, currency)}
+                    </span>
+                    <span>{formatMoney(line.net, currency)}</span>
+                  </div>
+                  <div style={{ ...exampleRow, fontSize: 11.5, color: 'var(--text-muted)' }}>
+                    <span style={{ paddingLeft: 12 }}>
+                      {t('billing.taxOnLine', 'IVA {{percent}}% su {{base}}', {
+                        percent: rate.percent,
+                        base: formatMoney(line.net, currency),
+                      })}
+                    </span>
+                    <span>{formatMoney(line.tax, currency)}</span>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ ...exampleRow, borderTop: '1px solid var(--border)', paddingTop: 6 }}>
                 <span style={{ color: 'var(--text-muted)' }}>
                   {t('billing.taxableAmount', 'Imponibile')}
                 </span>

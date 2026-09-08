@@ -27,6 +27,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
+import { SmtpErrorNotice } from './SmtpErrorNotice';
+import { smtpErrorSummary } from './smtpErrors';
 
 /**
  * The platform's own mailbox.
@@ -67,6 +69,10 @@ export const PlatformEmailSettings: React.FC = () => {
   });
 
   const [testTo, setTestTo] = useState('');
+  // The last rejection from a Verify or a test send, kept on screen. A toast
+  // scrolls away after a few seconds, and this is the thing the operator has
+  // to read carefully and act on.
+  const [lastFailure, setLastFailure] = useState<string | null>(null);
 
   // The delivery preview: which company's people would be written to.
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -158,18 +164,27 @@ export const PlatformEmailSettings: React.FC = () => {
       const res = await verifyPlatformEmailConfig();
       applyConfig(res.config);
       if (res.ok) {
+        setLastFailure(null);
         showToast(
           t('email.platformVerifyOk', 'Credenziali verificate: il server accetta l’accesso'),
           'success'
         );
       } else {
-        // Shown verbatim: an SMTP rejection reason ("535 Invalid credentials")
-        // is the whole diagnostic, and paraphrasing costs the reader the answer.
-        showToast(res.error || t('email.platformVerifyFailed', 'Verifica non riuscita'), 'error');
+        // The raw SMTP text is precise and unreadable. The toast carries the
+        // plain explanation; the panel below keeps both, including the
+        // server's own words for whoever has to fix the mailbox.
+        setLastFailure(res.error);
+        showToast(
+          smtpErrorSummary(res.error, t) ||
+            t('email.platformVerifyFailed', 'Verifica non riuscita'),
+          'error'
+        );
       }
     } catch (err: any) {
+      const raw = err?.response?.data?.error ?? null;
+      setLastFailure(raw);
       showToast(
-        err?.response?.data?.error || t('email.platformVerifyFailed', 'Verifica non riuscita'),
+        smtpErrorSummary(raw, t) || t('email.platformVerifyFailed', 'Verifica non riuscita'),
         'error'
       );
     } finally {
@@ -186,19 +201,24 @@ export const PlatformEmailSettings: React.FC = () => {
     try {
       const res = await sendPlatformTestEmail(testTo.trim());
       if (res.sent) {
+        setLastFailure(null);
         showToast(
           t('email.platformTestSent', 'Email di prova inviata a {{to}}', { to: testTo.trim() }),
           'success'
         );
       } else {
+        setLastFailure(res.error);
         showToast(
-          res.error || t('email.platformTestFailed', 'Invio della email di prova non riuscito'),
+          smtpErrorSummary(res.error, t) ||
+            t('email.platformTestFailed', 'Invio della email di prova non riuscito'),
           'error'
         );
       }
     } catch (err: any) {
+      const raw = err?.response?.data?.error ?? null;
+      setLastFailure(raw);
       showToast(
-        err?.response?.data?.error ||
+        smtpErrorSummary(raw, t) ||
           t('email.platformTestFailed', 'Invio della email di prova non riuscito'),
         'error'
       );
@@ -262,10 +282,10 @@ export const PlatformEmailSettings: React.FC = () => {
           </div>
         )}
 
-        {config?.lastError && (
-          <div style={{ ...warnBox, marginTop: 12 }}>
-            <AlertTriangle size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-            {t('email.platformLastError', 'Ultimo errore: {{error}}', { error: config.lastError })}
+        {/* Whatever went wrong most recently, explained rather than quoted. */}
+        {(lastFailure || config?.lastError) && (
+          <div style={{ marginTop: 12 }}>
+            <SmtpErrorNotice error={lastFailure ?? config?.lastError} />
           </div>
         )}
       </section>
@@ -375,6 +395,15 @@ export const PlatformEmailSettings: React.FC = () => {
           {t(
             'email.platformTestHelp',
             'Invia un messaggio reale dalla casella della piattaforma all’indirizzo indicato. La verifica controlla solo l’accesso al server; questo conferma che una email arrivi davvero.'
+          )}
+        </p>
+        {/* There are two test buttons in the product and they answer different
+            questions. Saying so here stops the wrong one being used to draw a
+            conclusion about the other. */}
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+          {t(
+            'email.platformTestScope',
+            'Questa prova verifica solo la casella email. Per provare l’intero avviso di pagamento non riuscito (email al titolare + copia al gestore + notifica in-app) usa “Invia avviso di prova” in Impostazioni → Fatturazione.'
           )}
         </p>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
