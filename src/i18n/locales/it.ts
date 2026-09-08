@@ -4186,6 +4186,17 @@ const it = {
     // fiscali sono due cose diverse e solo la seconda serve qui.
     taxWhereInStripe: 'Questa è un’aliquota fissa creata a mano in Stripe → Catalogo prodotti → Aliquote fiscali. NON è Stripe Tax: non serve attivare Stripe Tax né alcun account aggiuntivo. Imposta il tipo su “Esclusiva”.',
     taxOpenStripeRates: 'Apri le aliquote fiscali su Stripe',
+    // Selezione dell'aliquota: si sceglie da un elenco letto da Stripe, così
+    // l'ID non va mai digitato a mano.
+    taxLoadingRates: 'Lettura delle aliquote da Stripe…',
+    taxPickRate: 'Scegli un’aliquota dal tuo account Stripe',
+    taxPickNone: '— nessuna imposta —',
+    taxInclusiveShort: 'INCLUSIVA',
+    taxArchivedShort: 'archiviata',
+    taxNoRatesInStripe: 'Nessuna aliquota trovata su questo account Stripe. Creane una dal pannello Stripe, poi premi Ricarica.',
+    taxRatesUnreadable: 'Impossibile leggere le aliquote da Stripe: {{error}}',
+    taxOrPasteId: 'Oppure incolla l’ID aliquota',
+    taxReloadRates: 'Ricarica elenco',
     noticeTransport: 'Inviata tramite',
     noticeTransportCompany: 'SMTP dell’azienda (casella piattaforma non configurata)',
   },

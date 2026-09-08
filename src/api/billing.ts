@@ -9,6 +9,7 @@ import {
   BillingTaxRate,
   BillingTestNoticeResult,
   NoticeRecipients,
+  StripeTaxRateOption,
 } from '../types';
 
 export type { NoticeRecipients };
@@ -211,6 +212,18 @@ export const billingApi = {
     const { data } = await apiClient.get('/billing/notices/recipients', {
       params: companyId ? { company_id: companyId } : {},
     });
+    return data;
+  },
+
+  /**
+   * The tax rates that exist on the Stripe account, so one can be picked from
+   * a list rather than copied between browser tabs.
+   */
+  listAvailableTaxRates: async (): Promise<{
+    rates: StripeTaxRateOption[];
+    error?: string;
+  }> => {
+    const { data } = await apiClient.get('/billing/tax/available');
     return data;
   },
 

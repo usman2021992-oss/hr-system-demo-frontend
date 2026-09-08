@@ -4184,6 +4184,17 @@ const en = {
     // two different products and only the second one is wanted here.
     taxWhereInStripe: 'This is a fixed rate created by hand in Stripe → Product catalogue → Tax rates. It is NOT Stripe Tax: nothing needs activating. Set the type to “Exclusive”.',
     taxOpenStripeRates: 'Open tax rates in Stripe',
+    // Picking the rate: chosen from a list read out of Stripe, so the id never
+    // has to be typed by hand.
+    taxLoadingRates: 'Reading tax rates from Stripe…',
+    taxPickRate: 'Choose a tax rate from your Stripe account',
+    taxPickNone: '— no tax —',
+    taxInclusiveShort: 'INCLUSIVE',
+    taxArchivedShort: 'archived',
+    taxNoRatesInStripe: 'No tax rates found on this Stripe account. Create one in the Stripe dashboard, then press Reload.',
+    taxRatesUnreadable: 'Could not read the tax rates from Stripe: {{error}}',
+    taxOrPasteId: 'Or paste the tax rate ID',
+    taxReloadRates: 'Reload list',
     noticeTransport: 'Sent through',
     noticeTransportCompany: 'the company’s SMTP (platform mailbox not configured)',
   },

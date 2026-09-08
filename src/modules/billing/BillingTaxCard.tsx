@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Percent, RefreshCw, AlertTriangle, CheckCircle2, Save, Info } from 'lucide-react';
 import billingApi from '../../api/billing';
@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { taxWorkings } from './taxMath';
-import type { BillingTaxRate } from '../../types';
+import type { BillingTaxRate, StripeTaxRateOption } from '../../types';
 
 /**
  * The tax rate every total on this page is built from.
@@ -45,7 +45,32 @@ export const BillingTaxCard: React.FC<{
   const [editingId, setEditingId] = useState(false);
   const [rateIdDraft, setRateIdDraft] = useState('');
 
+  // The rates that exist in the Stripe account. Loaded so a rate can be picked
+  // from a list: the id is machine-readable and nothing else, and there is no
+  // reason a person should ever have to retype one.
+  const [available, setAvailable] = useState<StripeTaxRateOption[] | null>(null);
+  const [ratesError, setRatesError] = useState<string | null>(null);
+
   const rate = local ?? tax;
+
+  const loadAvailable = useCallback(async () => {
+    if (!canSync) return;
+    try {
+      const res = await billingApi.listAvailableTaxRates();
+      setAvailable(res.rates);
+      setRatesError(res.error ?? null);
+    } catch (err: any) {
+      setAvailable([]);
+      setRatesError(err?.response?.data?.error ?? null);
+    }
+  }, [canSync]);
+
+  // Loaded up front rather than on opening the editor, because when nothing is
+  // configured yet the picker *is* the card: there is no "open the editor"
+  // step to hang the request off.
+  useEffect(() => {
+    void loadAvailable();
+  }, [loadAvailable]);
 
   const handleSaveRateId = async () => {
     setSavingId(true);
@@ -129,6 +154,95 @@ export const BillingTaxCard: React.FC<{
   const monthlyNet = sums.net;
   const exampleTax = sums.tax;
 
+  /**
+   * How a rate gets linked.
+   *
+   * Rendered in two places: on its own when nothing is configured yet, and
+   * behind Modifica once something is. Both need the identical control, and
+   * splitting them is how the empty state ended up with no way to configure
+   * anything at all.
+   */
+  const picker = (
+    <div style={{ display: 'grid', gap: 10, marginTop: 4 }}>
+      {available === null ? (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {t('billing.taxLoadingRates', 'Lettura delle aliquote da Stripe…')}
+        </div>
+      ) : available.length > 0 ? (
+        <label style={{ display: 'grid', gap: 5, fontSize: 12 }}>
+          <span style={{ color: 'var(--text-muted)' }}>
+            {t('billing.taxPickRate', 'Scegli un’aliquota dal tuo account Stripe')}
+          </span>
+          <select
+            value={rateIdDraft}
+            onChange={(e) => setRateIdDraft(e.target.value)}
+            style={{
+              padding: '9px 11px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--background)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="">{t('billing.taxPickNone', '— nessuna imposta —')}</option>
+            {available.map((r) => (
+              // Archived and inclusive rates stay listed but unselectable: an
+              // empty list explains nothing, a disabled entry explains itself.
+              <option key={r.id} value={r.id} disabled={!r.active}>
+                {r.percentage}%
+                {r.displayName ? ` · ${r.displayName}` : ''}
+                {r.jurisdiction ? ` · ${r.jurisdiction}` : ''}
+                {r.inclusive ? ` · ${t('billing.taxInclusiveShort', 'INCLUSIVA')}` : ''}
+                {r.active ? '' : ` · ${t('billing.taxArchivedShort', 'archiviata')}`}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {ratesError
+            ? t('billing.taxRatesUnreadable', 'Impossibile leggere le aliquote da Stripe: {{error}}', {
+                error: ratesError,
+              })
+            : t(
+                'billing.taxNoRatesInStripe',
+                'Nessuna aliquota trovata su questo account Stripe. Creane una dal pannello Stripe, poi premi Ricarica.'
+              )}
+        </div>
+      )}
+
+      {/* The manual field stays, for the case the list cannot be read at all -
+          a Stripe outage should cost convenience, not the ability to configure. */}
+      <label style={{ display: 'grid', gap: 5, fontSize: 12 }}>
+        <span style={{ color: 'var(--text-muted)' }}>
+          {t('billing.taxOrPasteId', 'Oppure incolla l’ID aliquota')}
+        </span>
+        <Input
+          value={rateIdDraft}
+          onChange={(e) => setRateIdDraft(e.target.value)}
+          placeholder="txr_1AbC..."
+          style={{ fontFamily: 'monospace', fontSize: 12 }}
+        />
+      </label>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Button size="sm" onClick={handleSaveRateId} loading={savingId}>
+          <Save size={12} /> {t('common.save', 'Salva')}
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => void loadAvailable()}>
+          <RefreshCw size={12} /> {t('billing.taxReloadRates', 'Ricarica elenco')}
+        </Button>
+        {editingId && (
+          <Button size="sm" variant="secondary" onClick={() => setEditingId(false)}>
+            {t('common.cancel', 'Annulla')}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
   const row: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
@@ -189,20 +303,47 @@ export const BillingTaxCard: React.FC<{
       </div>
 
       {!rate || (!rate.enabled && rate.source === 'env' && !rate.stripeTaxRateId) ? (
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            alignItems: 'flex-start',
-            fontSize: 12.5,
-            color: 'var(--text-muted)',
-          }}
-        >
-          <AlertTriangle size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-          {t(
-            'billing.taxNotConfigured',
-            'Nessuna aliquota configurata: gli abbonamenti vengono addebitati senza imposta.'
-          )}
+        /* Nothing linked yet. This state has to *be* the configuration screen:
+           an earlier version showed only the warning and kept the rate field in
+           the other branch, which left no way to link a rate in the one state
+           where you need to. */
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'flex-start',
+              fontSize: 12.5,
+              color: 'var(--text-muted)',
+              marginBottom: 14,
+            }}
+          >
+            <AlertTriangle size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
+            {t(
+              'billing.taxNotConfigured',
+              'Nessuna aliquota configurata: gli abbonamenti vengono addebitati senza imposta.'
+            )}
+          </div>
+
+          <div style={syncNote}>
+            <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+            <div>
+              {t(
+                'billing.taxWhereInStripe',
+                'Questa è un’aliquota fissa creata a mano in Stripe → Catalogo prodotti → Aliquote fiscali. NON è Stripe Tax: non serve attivare Stripe Tax né alcun account aggiuntivo. Imposta il tipo su “Esclusiva”.'
+              )}{' '}
+              <a
+                href="https://dashboard.stripe.com/test/tax-rates"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--accent)', fontWeight: 600 }}
+              >
+                {t('billing.taxOpenStripeRates', 'Apri le aliquote fiscali su Stripe')}
+              </a>
+            </div>
+          </div>
+
+          {canSync && picker}
         </div>
       ) : (
         <>
@@ -343,20 +484,7 @@ export const BillingTaxCard: React.FC<{
                   Stripe - saving here re-reads it from Stripe immediately, so
                   the percentage shown is never the one somebody typed. */}
               {editingId ? (
-                <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Input
-                    value={rateIdDraft}
-                    onChange={(e) => setRateIdDraft(e.target.value)}
-                    placeholder="txr_1AbC..."
-                    style={{ fontFamily: 'monospace', fontSize: 12, minWidth: 200 }}
-                  />
-                  <Button size="sm" onClick={handleSaveRateId} loading={savingId}>
-                    <Save size={12} /> {t('common.save', 'Salva')}
-                  </Button>
-                  <Button size="sm" variant="secondary" onClick={() => setEditingId(false)}>
-                    {t('common.cancel', 'Annulla')}
-                  </Button>
-                </span>
+                <span style={{ flexBasis: '100%' }}>{picker}</span>
               ) : (
                 <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
