@@ -1,0 +1,23 @@
+{
+  "id": "session-1774428818047",
+  "startedAt": "2026-03-25T08:53:38.047Z",
+  "cwd": "/Users/user/hr-system-tech-demo/frontend",
+  "context": {
+    "lastMatchedPatterns": [
+      "mem-project_deployment-database-folder-structure",
+      "mem-project_scope-milestones---payment",
+      "mem-MEMORY-resource-library--completed-se",
+      "mem-project_scope-feature-scope",
+      "mem-project_scope-overview"
+    ]
+  },
+  "metrics": {
+    "edits": 22,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "updatedAt": "2026-03-25T09:23:41.183Z",
+  "endedAt": "2026-03-25T09:24:18.053Z",
+  "duration": 1840007
+}

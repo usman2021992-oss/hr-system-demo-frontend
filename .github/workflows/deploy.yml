@@ -1,0 +1,43 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.2.0
+
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+
+          script: |
+            set -e
+
+            # Mock xclip and xsel to prevent clipboard errors in headless environment
+            mkdir -p /tmp/bin
+            echo '#!/bin/sh' > /tmp/bin/xclip
+            echo 'exit 0' >> /tmp/bin/xclip
+            echo '#!/bin/sh' > /tmp/bin/xsel
+            echo 'exit 0' >> /tmp/bin/xsel
+            chmod +x /tmp/bin/xclip /tmp/bin/xsel
+            export PATH=/tmp/bin:$PATH
+
+            cd /var/www/hr-system-demo-frontend
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            npm install
+            npm run build
+
+            sudo systemctl restart nginx
+
+            echo "Frontend deployed"

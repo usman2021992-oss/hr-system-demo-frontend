@@ -1,0 +1,23 @@
+{
+  "id": "session-1774350980072",
+  "startedAt": "2026-03-24T11:16:20.072Z",
+  "cwd": "/Users/user/hr-system-tech-demo/frontend",
+  "context": {
+    "lastMatchedPatterns": [
+      "mem-project_scope-milestones---payment",
+      "mem-MEMORY-account-creation---password-fl",
+      "mem-project_scope-feature-scope",
+      "mem-project-context-frontend-ux-fixes-needed",
+      "mem-MEMORY-stripe-webhook-flow"
+    ]
+  },
+  "metrics": {
+    "edits": 23,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "updatedAt": "2026-03-25T08:51:46.376Z",
+  "endedAt": "2026-03-25T08:52:04.481Z",
+  "duration": 77744411
+}

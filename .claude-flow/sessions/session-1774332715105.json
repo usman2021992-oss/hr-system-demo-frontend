@@ -1,0 +1,20 @@
+{
+  "id": "session-1774332715105",
+  "startedAt": "2026-03-24T06:11:55.105Z",
+  "cwd": "/Users/user/hr-system-tech-demo/frontend",
+  "context": {
+    "lastMatchedPatterns": [
+      "mem-MEMORY-contact",
+      "mem-MEMORY-planned-integrations--not-yet-"
+    ]
+  },
+  "metrics": {
+    "edits": 18,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "updatedAt": "2026-03-24T09:35:57.419Z",
+  "endedAt": "2026-03-24T09:36:24.776Z",
+  "duration": 12269680
+}

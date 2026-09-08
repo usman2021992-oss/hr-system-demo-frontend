@@ -1,0 +1,14 @@
+{
+  "id": "session-1774430745217",
+  "startedAt": "2026-03-25T09:25:45.217Z",
+  "cwd": "/Users/user/hr-system-tech-demo/frontend",
+  "context": {},
+  "metrics": {
+    "edits": 11,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "endedAt": "2026-03-25T10:27:31.056Z",
+  "duration": 3705840
+}

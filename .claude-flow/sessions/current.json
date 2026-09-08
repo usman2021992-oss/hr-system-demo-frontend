@@ -1,0 +1,21 @@
+{
+  "id": "session-1774512036445",
+  "startedAt": "2026-03-26T08:00:36.445Z",
+  "cwd": "/Users/user/hr-system-tech-demo/frontend",
+  "context": {
+    "lastMatchedPatterns": [
+      "mem-MEMORY-planned-integrations--not-yet-",
+      "mem-MEMORY-contact",
+      "mem-project-context-integrations-by-phase",
+      "mem-project_stickfind_ui-twilio-call-masking---sms-prox",
+      "mem-project_scope-post-delivery-maintenance"
+    ]
+  },
+  "metrics": {
+    "edits": 62,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "updatedAt": "2026-03-26T12:39:44.837Z"
+}

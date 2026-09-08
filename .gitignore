@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+
+src/modules/externalAffluence/local-only/
+temp_auto_push.bat
+temp_interactive_push.bat
+config.bat
+
+.env
+branch_structure.json

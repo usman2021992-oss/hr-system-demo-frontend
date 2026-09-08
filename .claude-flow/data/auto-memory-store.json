@@ -1,0 +1,1394 @@
+[
+  {
+    "id": "mem-MEMORY-identity",
+    "key": "identity",
+    "content": "- **Product:** Jigsaw IQ — multi-tenant SaaS MCP connector for ecommerce brands\n- **Client:** Andrew Jennings / Jigsaw Studio\n- **Developer:** Umer Khalid\n- See `project-context.md` for full business & technical context",
+    "summary": "Identity",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715115
+  },
+  {
+    "id": "mem-MEMORY-phase-status",
+    "key": "phase-status",
+    "content": "- **Phase 1** (Complete, $1,000): Single-tenant, live on Railway for Larsson & Jennings\n- **Phase 2A** (In progress, $2,000): Multi-tenant self-serve — Next.js + Clerk + PostgreSQL + OAuth + usage limits\n- **Phase 2B** (Future, $3,500): Stripe billing, intent layer, cron jobs, insight emails, admin workflows",
+    "summary": "Phase Status",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715115
+  },
+  {
+    "id": "mem-MEMORY-phase-2a-success-criteria",
+    "key": "phase-2a-success-criteria",
+    "content": "- Any brand can self-onboard and connect Shopify/Klaviyo/Triple Whale\n- Each brand gets a unique connector token for Claude\n- Usage capped at 30 queries/month on free tier (FREE_TIER_QUESTION_LIMIT)\n- Credentials AES-256-CBC encrypted in PostgreSQL\n- Full tenant isolation per request",
+    "summary": "Phase 2A Success Criteria",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-planned-integrations--not-yet-",
+    "key": "planned-integrations-not-yet-implemented-",
+    "content": "- **Google Ads** — possibly Phase 2A if confirmed, else Phase 2B\n- **Meta Ads** — Phase 2B",
+    "summary": "Planned Integrations (not yet implemented)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-business-model",
+    "key": "business-model",
+    "content": "- **Freemium:** Free tier = all platforms, 30-day history, 30 questions/month\n- Free tier is lead-gen for Jigsaw Studio's marketing agency\n- Paid tiers (Stripe, Phase 2B) = more questions + longer history\n- Product URL: jigsawiq.com",
+    "summary": "Business Model",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-connector-url---auth",
+    "key": "connector-url-auth",
+    "content": "- Each brand gets a unique bearer token (`connector_token` in `brand_connections` table)\n- Claude sends: `Authorization: Bearer {connector_token}` to the MCP `/mcp` endpoint\n- MCP protocol is JSON-RPC 2.0 (`tools/list`, `tools/call`)",
+    "summary": "Connector URL & Auth",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-oauth-notes",
+    "key": "oauth-notes",
+    "content": "- Klaviyo token endpoint MUST be `https://a.klaviyo.com/oauth/token` (not www) — changed March 31, 2025\n- Google Ads requires a developer token (1-3 week approval) in addition to OAuth\n- Triple Whale: API key in Phase 2A, OAuth deferred to Phase 2B",
+    "summary": "OAuth Notes",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-contact",
+    "key": "contact",
+    "content": "- Client: Andrew Jennings — andrew@jigsawstudio.com\n- Open Q: Google Ads + Meta in Phase 2A or Phase 2B? (confirm with Andrew)",
+    "summary": "Contact",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-key-files",
+    "key": "key-files",
+    "content": "- `CLAUDE.md` — commands, architecture, env vars, security rules\n- `CURSOR_MEMORY.md` — phase planning, client decisions, open questions\n- `LJ-MCP-Connector-Documentation.md` — detailed technical specs\n- `database/schema.sql` — full PostgreSQL schema\n- `memory/project-context.md` — full business + implementation context (OAuth details, timeline, MCP protocol format, open questions)",
+    "summary": "Key Files",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-design-system--light-theme---j",
+    "key": "design-system-light-theme-jigsawstudio-com-",
+    "content": "- **Palette:** `--bg: #f0f0f0`, `--bg-elevated: #ffffff`, `--text: #151619`, `--primary: #2522F5`, `--accent: #7EFC76`\n- **Fonts:** Inter Display (headings) + Inter (body) + Roboto Mono (code) — all imported in `globals.css`\n- **Buttons:** Primary = green `#7EFC76` + near-black text; Secondary = white + blue border\n- **Clerk JS appearance:** `colorPrimary: #2522F5`, `socialButtonsVariant: blockButton`; green submit button via `.cl-formButtonPrimary` CSS override\n- **All styles in:** `frontend/ap",
+    "summary": "Design System (Light Theme — jigsawstudio.com)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-MEMORY-frontend-architecture--phase-2",
+    "key": "frontend-architecture-phase-2a-",
+    "content": "- Nav: Dashboard (`/dashboard`) + Connectors (`/connectors`) — 2 items only\n- `/connectors` = unified page replacing old `/settings` + `/onboarding` nav items\n- `/onboarding` and `/settings` still exist as legacy but nav points to `/connectors`\n- Key components: `ConnectorsManager` (unified create+manage), `OnboardingFlow` (tabbed wizard), `ConnectionIntegrations` (has `onDisconnect` prop for disconnect buttons in settings context)\n- `ConnectorGenerator` calls `router.refresh()` + `onCreated` af",
+    "summary": "Frontend Architecture (Phase 2A)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-project-context-jigsaw-iq---full-project-conte",
+    "key": "jigsaw-iq-full-project-context",
+    "content": "**Last Updated:** February 24, 2026\n**Developer:** Umer Khalid\n**Client:** Andrew Jennings / Jigsaw Studio (andrew@jigsawstudio.com)\n\n---",
+    "summary": "Jigsaw IQ - Full Project Context",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715116
+  },
+  {
+    "id": "mem-project-context-business-model",
+    "key": "business-model",
+    "content": "- **Freemium:** Free tier = all platforms, 30-day history, 30 questions/month\n- Free tier is a lead-gen funnel for Jigsaw Studio's marketing agency\n- High-intent free users get flagged for agency outreach (Phase 2B)\n- Paid tiers = more questions + longer data history (Stripe billing in Phase 2B)\n- Product URL: jigsawiq.com (confirm Andrew owns domain)\n\n---",
+    "summary": "Business Model",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-phase-budget---scope",
+    "key": "phase-budget-scope",
+    "content": "| Phase | Budget | Status | Notes |\n|-------|--------|--------|-------|\n| Phase 1 | $1,000 | COMPLETE (PAID) | Single-tenant L&J connector, live on Railway |\n| Phase 2A | $2,000 | IN PROGRESS | Multi-tenant, self-serve, Next.js + Clerk + Postgres |\n| Phase 2B | $3,500 | FUTURE | Stripe billing, intent signals, insight emails, admin |\n\n---",
+    "summary": "Phase Budget & Scope",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-phase-2a-open-questions--for-a",
+    "key": "phase-2a-open-questions-for-andrew-",
+    "content": "- Railway project access — can Umer access the existing L&J codebase?\n- Google Ads + Meta: include in Phase 2A or defer to Phase 2B?\n- Hosting costs: who pays $15-30/month ongoing?\n- Accounts: Andrew creates Clerk/Vercel, or Umer sets up?\n- Stripe: launch free-only or include paid tier from day 1?\n- Domain: does Andrew own jigsawiq.com?\n- Privacy/Terms pages: Andrew provides or use templates?\n\n---",
+    "summary": "Phase 2A Open Questions (for Andrew)",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-phase-2b-scope--future-",
+    "key": "phase-2b-scope-future-",
+    "content": "- Query logging infrastructure\n- Intent signal detection (keyword matching + alerts to Jigsaw team)\n- Admin dashboard for Jigsaw team\n- Monthly AI insight emails (via Claude API) with review/approval workflow\n- Upgrade conversion flows (in-app prompts when limit hit)\n- Stripe billing + webhooks\n- Cron job infrastructure\n- Production security hardening\n\n---",
+    "summary": "Phase 2B Scope (Future)",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-integrations-by-phase",
+    "key": "integrations-by-phase",
+    "content": "| Platform | Phase 2A | Phase 2B | Auth Method |\n|----------|----------|----------|-------------|\n| Shopify | ✅ | - | OAuth 2.0 |\n| Klaviyo | ✅ | - | OAuth 2.0 + PKCE |\n| Triple Whale | ✅ (API key) | OAuth | API key for now |\n| Google Ads | TBD (confirm with Andrew) | Fallback | OAuth 2.0 + Developer Token |\n| Meta Ads | TBD (confirm with Andrew) | Fallback | OAuth 2.0 |\n\n---",
+    "summary": "Integrations by Phase",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-mcp-protocol-format--json-rpc-",
+    "key": "mcp-protocol-format-json-rpc-2-0-",
+    "content": "**Tool list request:**\n```json\n{ \"jsonrpc\": \"2.0\", \"method\": \"tools/list\", \"id\": 1 }\n```\n\n**Tool call request:**\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": { \"name\": \"get_sales_summary\", \"arguments\": { \"start_date\": \"2024-02-01\", \"end_date\": \"2024-02-10\" } },\n  \"id\": 1\n}\n```\n\n**Tool call response:**\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"result\": { \"content\": [{ \"type\": \"text\", \"text\": \"Sales Summary...\" }] },\n  \"id\": 1\n}\n```\n\n---",
+    "summary": "MCP Protocol Format (JSON-RPC 2.0)",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-oauth-implementation-notes",
+    "key": "oauth-implementation-notes",
+    "content": "### Shopify\n- Exchange code at: `https://{shop}/admin/oauth/access_token`\n- Tokens don't expire by default (offline access tokens)\n- Shop domain format: `example.myshopify.com` — validate with regex `/^[a-z0-9-]+\\.myshopify\\.com$/i`\n\n### Klaviyo\n- Authorization URL: `https://www.klaviyo.com/oauth/authorize`\n- Token endpoint: `https://a.klaviyo.com/oauth/token` (MUST use `a.klaviyo.com` as of March 31, 2025)\n- Uses PKCE (`code_challenge_method=S256`)\n- Tokens expire after 60 days — implement refr",
+    "summary": "OAuth Implementation Notes",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-multi-tenant-request-flow",
+    "key": "multi-tenant-request-flow",
+    "content": "```\n1. Claude → POST /mcp  (Bearer: {connector_token})\n2. Validate token → lookup brand_connections table\n3. Check monthly usage count (api_usage table) → block if >= FREE_TIER_QUESTION_LIMIT\n4. Get encrypted credentials from platform_credentials table\n5. Decrypt credentials (AES-256-CBC)\n6. Call platform APIs\n7. Log to api_usage\n8. Return MCP response\n```\n\n---",
+    "summary": "Multi-Tenant Request Flow",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-connector-url-format",
+    "key": "connector-url-format",
+    "content": "Each brand gets a unique URL:\n```\nhttps://mcp.jigsawiq.com/mcp\n```\nwith bearer token in `Authorization` header (not query param for security).\n\nThe connector_token is generated as: `crypto.randomBytes(32).toString('hex')`\n\n---",
+    "summary": "Connector URL Format",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-database-notes",
+    "key": "database-notes",
+    "content": "- Unique constraint on `platform_credentials(connection_id, platform)` — use `ON CONFLICT DO UPDATE`\n- Monthly usage query: `WHERE created_at >= date_trunc('month', CURRENT_DATE)`\n- Connection pool: `max: 20`, `ssl: { rejectUnauthorized: false }` (Railway requires SSL)\n\n---",
+    "summary": "Database Notes",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-deployment",
+    "key": "deployment",
+    "content": "| Component | Platform | Notes |\n|-----------|----------|-------|\n| Frontend (Next.js) | Vercel | Auto-deploys from main branch |\n| MCP Server | Railway | Existing project from Phase 1 |\n| PostgreSQL | Railway | Same project as MCP server |\n\n---",
+    "summary": "Deployment",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-4-week-timeline",
+    "key": "4-week-timeline",
+    "content": "| Week | Milestone |\n|------|-----------|\n| 1-2 | DB setup, Clerk auth, onboarding UI, Shopify + Klaviyo OAuth callbacks |\n| 3-4 | MCP server multi-tenant refactor, usage tracking, deploy, E2E testing, UAT with Andrew |\n\n---",
+    "summary": "4-Week Timeline",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-project-context-success-criteria--phase-2a-don",
+    "key": "success-criteria-phase-2a-done-",
+    "content": "- Any brand can self-onboard at jigsawiq.com\n- Connect Shopify/Klaviyo/Triple Whale via web UI\n- Unique connector URL per brand works in Claude\n- Usage capped at 30/month on free tier\n- Credentials AES-256-CBC encrypted in DB\n- Multiple brands isolated correctly\n- Andrew approves",
+    "summary": "Success Criteria (Phase 2A Done)",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-Downloads-MCP-Connector-Dashboard/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715117
+  },
+  {
+    "id": "mem-MEMORY-memory-index",
+    "key": "memory-index",
+    "content": "- [feedback_no_superpowers.md](feedback_no_superpowers.md) — Do not invoke superpowers skills; user wants them ignored",
+    "summary": "Memory Index",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-ai-platform/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715120
+  },
+  {
+    "id": "mem-feedback_no_superpowers----",
+    "key": "-",
+    "content": "name: no_superpowers_skills\ndescription: User wants superpowers skills ignored — do not invoke any skill tool before responding\ntype: feedback\n---\n\nDo not invoke superpowers skills (brainstorming, systematic-debugging, writing-plans, etc.) before responding.\n\n**Why:** User explicitly asked to ignore the superpowers docs.\n\n**How to apply:** Skip all skill invocations entirely. Respond directly to requests without checking for or invoking skills.",
+    "summary": "---",
+    "namespace": "feedback_no_superpowers",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-ai-platform/memory/feedback_no_superpowers.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715121
+  },
+  {
+    "id": "mem-MEMORY-project--beyond-the-curriculum",
+    "key": "project-beyond-the-curriculum",
+    "content": "Full project context saved in `memory/project-context.md`.\n\nKey facts:\n- Custom Node.js backend + PostgreSQL on top of LearnWorlds LMS (cannot edit LW core)\n- **LearnWorlds password**: CANNOT be changed from BTC platform — users must go to beyondthecurriculum.learnworlds.com and use \"Forgot password?\" there\n- 3 registration types: Individual Student, School, Homeschool — each with own Stripe flow + dashboard\n- 5 roles: individual_student, school_admin, teacher, homeschool_parent, student (school",
+    "summary": "Project: Beyond the Curriculum",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-learnworlds-sso--session-7-",
+    "key": "learnworlds-sso-session-7-",
+    "content": "- **Admin API POST /sso returns 404** on LW plan — endpoint not available on their tier\n- **Solution**: JWT Custom SSO — requires `LW_SSO_SECRET` env var\n- `learnworlds.js` `getLWSSOLink()`: tries JWT SSO first (if `LW_SSO_SECRET` set), falls back to Admin API\n- `buildJwtSSOUrl()`: signs `{ iss, iat, jti, email }` HS256 → `https://{domain}/sso?jwt={token}&redirectUrl={path}`\n- Setup: LW Admin → Settings → Single Sign-On → enable Custom SSO → copy \"JWT Secret Key\" → `LW_SSO_SECRET=` in .env\n- All",
+    "summary": "LearnWorlds SSO (session 7)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-ui-design-status--completed-se",
+    "key": "ui-design-status-completed-session-",
+    "content": "- Theme: Navy (#19192C) + Gold (#C49B54) — all theme.js tokens fixed to match CSS vars\n- Navbar: 68px height, professional logo + wordmark, mobile hamburger drawer, scroll shadow\n- All pages updated to 68px navbar height (replaced all `100vh - 64px`)\n- DashboardLayout: `height: calc(100vh - 68px)` with sidebar + main both scrollable independently\n- Sidebar: SVG icons (no emojis), user avatar+name panel, settings link, hover logout button\n- All dashboards redesigned: StatCard pattern with usage b",
+    "summary": "UI/Design status (completed session)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-subscription-expiry-logic--com",
+    "key": "subscription-expiry-logic-completed-session-",
+    "content": "- **Accounts never suspended on expiry**: expireSubscriptions() no longer sets is_active=FALSE for individual or org users\n- **Expiry detection**: individual users use `subscription_expires_at < NOW()` (stays as past date), orgs use `status='suspended'`\n- **Login allowed for expired**: login()/verify() allow individual_student (account_type=individual) even if is_active=FALSE (safety net)\n- **forgotPassword/resetPassword**: extended to allow expired individual users (is_active=FALSE + account_ty",
+    "summary": "Subscription/expiry logic (completed session)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-account-creation---password-fl",
+    "key": "account-creation-password-flow-completed-session-",
+    "content": "- mustResetPassword REMOVED from all controllers + ProtectedRoute (user requested, session 3)\n- tempPassword NEVER returned to frontend in any API response — welcome email only\n- /set-password (POST /account/set-password) still works voluntarily — clearMustResetPassword + syncLWUserPassword\n- Resources tab RE-ADDED to App.jsx + Sidebar after implementing file uploads (session 4)\n- RegisterPage: shows \"check your email\" success state — no password display on screen\n- SchoolAdminTeachersPage, Scho",
+    "summary": "Account creation / password flow (completed session)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-resource-library--completed-se",
+    "key": "resource-library-completed-session-4-",
+    "content": "- Backend: multer v2 for file uploads, stored in backend/uploads/ (UUID filenames)\n- Migration 007: added original_file_name column to resources table\n- resourceController.js: uploadResource (super_admin only, POST /resources/upload), addResource (URL, teacher/school_admin/homeschool_parent), listResources (all 4 roles), deleteResource (super_admin or uploader/org_admin)\n- app.js: serves /uploads statically (UUID filenames, not guessable)\n- SuperAdminResourcesPage.jsx: drag-drop upload with prog",
+    "summary": "Resource library (completed session 4)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-homeschool-module-fixes--sessi",
+    "key": "homeschool-module-fixes-session-5-",
+    "content": "- **homeschoolController.addStudent()**: Added `org.status === 'suspended'` check before seat limit check\n- **homeschoolController.getAddonCheckout()**: Blocks when `status='suspended'` OR `subscription_expires_at` is set\n- **homeschoolController.listStudents()**: Now returns `org: { status, subscriptionExpiresAt }` alongside students\n- **authController.js isInactiveOrgMember**: Context-aware 403 + `orgType` field ('school' | 'homeschool') based on `account_type`\n- **email.js sendOrgExpiredEmail",
+    "summary": "Homeschool module fixes (session 5)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-super-admin-manual-users---wel",
+    "key": "super-admin-manual-users-welcome-popup-session-5-",
+    "content": "- Route: `/super-admin/users` → `SuperAdminManualUsersPage.jsx`; Sidebar: \"Users\" item added for super_admin\n- Backend: `listManualUsers`, `addManualUser`, `updateManualUser`, `revokeManualUser` in superAdminController.js\n- Routes: GET/POST `/users/manual`, PATCH/DELETE `/users/manual/:id`\n- Manual users: `role='individual_student'`, `account_type='individual'`, `stripe_subscription_id IS NULL`\n- Access durations: 30d | 6m | 1y | custom date | never (NULL) — NULL expiry = cron never picks up\n- *",
+    "summary": "Super admin manual users + welcome popup (session 5)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-revoked-manual-user-login---da",
+    "key": "revoked-manual-user-login-dashboard-session-6-",
+    "content": "- **Bug**: Revoked manual users (`is_active=FALSE`, `subscription_expires_at=NULL`) could log in but hit 404 on dashboard because the expired-individual check requires `subscription_expires_at` to be set\n- **Fix**: `dashboardController.getProgress()` — explicit check for `!user.is_active && account_type=individual && no org_id` BEFORE the generic `!user.is_active → 404` guard → returns `{ subscriptionExpired: true, isManualUser: true }`\n- **LW unenrollment on revoke**: Already in `revokeManualUs",
+    "summary": "Revoked manual user login + dashboard (session 6)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-dual-role---individual-org-con",
+    "key": "dual-role-individual-org-conversion-session-6-",
+    "content": "- **addTeacher (school)**: If email is individual_student/individual with no org_id + no Stripe sub → convert in-place (UPDATE role/account_type/org_id/subscription_expires_at, keep password+LW account, enroll in org courses, send sendRoleAddedEmail). If they have stripe_subscription_id → descriptive 409.\n- **addStudent (school)**: Same pattern → converts to school student\n- **addStudent (homeschool)**: Same pattern → converts to homeschool child\n- **email.js**: Added `sendRoleAddedEmail({ to, f",
+    "summary": "Dual-role / individual→org conversion (session 6)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-MEMORY-bug-fixes--session-4-",
+    "key": "bug-fixes-session-4-",
+    "content": "- Billing portal return_url was /school-admin/overview + /homeschool/overview → fixed to /school-admin + /homeschool\n- accountController setPassword + resendCredentials: now allow expired individual users (is_active=FALSE + account_type=individual + no org_id)\n- authController ensureLearnWorldsProvisioned: trial users now enrolled in allCourseIds (not trialCourseIds) on first login\n- trialGate.js: deleted (was unused dead code)\n- demo-seed.js: removed all mustResetPassword:true from seed data",
+    "summary": "Bug fixes (session 4)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715123
+  },
+  {
+    "id": "mem-project-context-overview",
+    "key": "overview",
+    "content": "Custom integration layer on top of LearnWorlds LMS for young Australians, parents, teachers and schools.\n- Live site: https://beyondthecurriculum.learnworlds.com/\n- LearnWorlds plan: Learning Centre (full API v2 access)\n- Cannot edit LearnWorlds core code — all logic in custom backend",
+    "summary": "Overview",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-tech-stack",
+    "key": "tech-stack",
+    "content": "- Backend: Node.js\n- Database: PostgreSQL (Railway or Supabase)\n- Frontend: React\n- Backend hosting: Railway or Render\n- Frontend hosting: Vercel or Netlify\n- Payments: Stripe\n- LMS: LearnWorlds API v2\n- Auth: JWT tokens",
+    "summary": "Tech Stack",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-what-s-already-built",
+    "key": "what-s-already-built",
+    "content": "- Homepage, courses page, about page\n- Basic LearnWorlds signup/login (no payment, no role differentiation)\n- Spot for teacher resources (not permission gated)\n- Stripe account with products and pricing set up",
+    "summary": "What's Already Built",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-three-registration-types",
+    "key": "three-registration-types",
+    "content": "### 1. Individual Student (/register/student)\n- $4.99/month or $39.99/year\n- Free trial option (limited content access)\n- account_type = \"individual\", LearnWorlds student group\n\n### 2. School (/register/school) — yearly only\n| Plan | Teachers | Students | Price |\n|------|----------|----------|-------|\n| Foundation | 1 | 30 | $990/yr |\n| Empower | 3 | 90 | $2,490/yr |\n| Transform | 10 | 300 | $4,490/yr |\nAdd-ons: extra teacher $99.99/yr, extra student $39.99/yr\n- org_type = \"school\", School Admin",
+    "summary": "Three Registration Types",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-database-schema",
+    "key": "database-schema",
+    "content": "```sql\nCREATE TABLE organizations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255),\n  org_type VARCHAR(50), -- 'school', 'homeschool', 'individual'\n  stripe_customer_id VARCHAR(255),\n  stripe_subscription_id VARCHAR(255),\n  plan_name VARCHAR(100),\n  seat_limit INTEGER,\n  teacher_limit INTEGER,\n  used_seats INTEGER DEFAULT 0,\n  used_teacher_seats INTEGER DEFAULT 0,\n  status VARCHAR(50) DEFAULT 'active', -- 'active', 'inactive', 'cancelled'\n  created_at TIMESTAMP DEFAULT NOW(",
+    "summary": "Database Schema",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-roles--rbac-",
+    "key": "roles-rbac-",
+    "content": "1. **Individual Student** — own dashboard, no teacher resources\n2. **School Admin** — all teachers+students in org, can invite/assign/remove, enforces seat limits\n3. **Teacher** — assigned students only, resource library access, can add/remove students within limits\n4. **Homeschool Parent** — like teacher but own children only, resource library access\n5. **Student (school/homeschool)** — own dashboard only, no teacher resources",
+    "summary": "Roles (RBAC)",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-seat-management",
+    "key": "seat-management",
+    "content": "- Check: `used_seats >= seat_limit` → 403 error\n- Add student: used_seats + 1\n- Remove student: set status='inactive', suspend in LearnWorlds, used_seats - 1\n- Never delete users — always keep as inactive",
+    "summary": "Seat Management",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-stripe-webhook-events",
+    "key": "stripe-webhook-events",
+    "content": "- `checkout.session.completed` → create org + user, set seat_limit, provision LW user, welcome email\n- `subscription.updated` → recalculate seat_limit (base + addons)\n- `subscription.deleted` → org status='inactive', suspend all LW users\n- `invoice.payment_failed` → notify, 7-day grace period before suspension",
+    "summary": "Stripe Webhook Events",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-stripe-price-id---seat-mapping",
+    "key": "stripe-price-id-seat-mapping",
+    "content": "```javascript\nconst PLAN_SEAT_LIMITS = {\n  'price_individual_monthly': { seats: 1, teachers: 0, type: 'individual' },\n  'price_individual_yearly': { seats: 1, teachers: 0, type: 'individual' },\n  'price_foundation': { seats: 30, teachers: 1, type: 'school' },\n  'price_empower': { seats: 90, teachers: 3, type: 'school' },\n  'price_transform': { seats: 300, teachers: 10, type: 'school' },\n  'price_homeschool_base': { seats: 1, teachers: 0, type: 'homeschool' },\n  'price_homeschool_extra_child': { ",
+    "summary": "Stripe Price ID → Seat Mapping",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-learnworlds-api-v2",
+    "key": "learnworlds-api-v2",
+    "content": "Base URL: `https://[school-domain].learnworlds.com/v2`\n- POST /users — create user\n- POST /users/{userId}/enrollments — enroll in course\n- POST /groups/{groupId}/members — add to group\n- PATCH /users/{userId} { \"fields\": { \"is_disabled\": true/false } } — suspend/reactivate",
+    "summary": "LearnWorlds API v2",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-four-dashboards",
+    "key": "four-dashboards",
+    "content": "1. **Student** (/dashboard/student) — course progress, certificates, trial countdown, upgrade prompt\n2. **Teacher** (/dashboard/teacher) — assigned students + progress, add/remove students, resource library\n3. **School Admin** (/dashboard/admin) — all teachers+students, seat usage, invite teachers, subscription management\n4. **Homeschool Parent** (/dashboard/homeschool) — children progress, add/remove children, resource library",
+    "summary": "Four Dashboards",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-free-trial-logic",
+    "key": "free-trial-logic",
+    "content": "- account_type = 'trial', trial_expires_at = NOW() + 7 days\n- Access: Tax module first 15 slides + Goal Setting module first 15 slides only\n- On expiry: prompt to upgrade, access revoked\n- On upgrade: trial converted to paid subscription",
+    "summary": "Free Trial Logic",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-resource-library-access",
+    "key": "resource-library-access",
+    "content": "- teacher, homeschool_parent, school_admin → full access\n- student, trial → zero access (enforced at API level, frontend never receives data)",
+    "summary": "Resource Library Access",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-frontend-ux-fixes-needed",
+    "key": "frontend-ux-fixes-needed",
+    "content": "- Homepage: \"I am a Student / School / Homeschool Parent\" entry points\n- Remove placeholder text \"Write your awesome label here\"\n- Fix empty stats section\n- Fix dead footer links (Book Store, FAQs)\n- Add pricing page (all 3 plan types)\n- Simplify registration forms (remove irrelevant fields per user type)",
+    "summary": "Frontend UX Fixes Needed",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-milestones",
+    "key": "milestones",
+    "content": "- M1 ($500, Week 1): Backend, DB, Stripe, student flow, student dashboard, trial gating, homepage UX\n- M2 ($600, Week 2): School+homeschool flows, all dashboards, seat management, resource library, pricing page\n- M3 ($400, Week 3): Seat enforcement, inactive logic, full LW API sync, testing, go live",
+    "summary": "Milestones",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-out-of-scope",
+    "key": "out-of-scope",
+    "content": "- AI chatbot, career quiz, mobile app",
+    "summary": "Out of Scope",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-project-context-access-needed",
+    "key": "access-needed",
+    "content": "- LearnWorlds admin access (Administrative role)\n- Stripe developer access (Developer role)\n- Actual Stripe price IDs once access granted",
+    "summary": "Access Needed",
+    "namespace": "project-context",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum/memory/project-context.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715124
+  },
+  {
+    "id": "mem-MEMORY-project-overview",
+    "key": "project-overview",
+    "content": "Custom Node.js backend on top of LearnWorlds LMS + Stripe payments.\nWorking dir: `/Users/user/beyond-the-curriculum/backend`",
+    "summary": "Project Overview",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-stack",
+    "key": "stack",
+    "content": "- Node.js + Express, CommonJS (`require`)\n- PostgreSQL via `pg` Pool (DATABASE_URL)\n- Stripe SDK + webhooks\n- LearnWorlds API v2 (OAuth2 or static key)\n- JWT auth, bcryptjs, nodemailer",
+    "summary": "Stack",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-key-files",
+    "key": "key-files",
+    "content": "- `src/app.js` — Express app factory, all routers mounted\n- `src/db/schema.sql` + `src/db/migrations/` — DB schema\n- `src/services/learnworlds.js` — LW API client\n- `src/services/learnworldsAuth.js` — OAuth2 token manager with caching\n- `src/controllers/webhookController.js` — handles all 4 Stripe webhook events\n- `.env.example` — all env vars documented",
+    "summary": "Key Files",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-learnworlds-api",
+    "key": "learnworlds-api",
+    "content": "- Base URL: `https://${LW_DOMAIN}/admin/api/v2`\n- Auth: `Lw-Client: {client_id}` + `Authorization: Bearer {token}`\n- OAuth token endpoint: `POST https://${LW_DOMAIN}/oauth2/token` (client_credentials)\n- Suspend: `POST /users/{id}/suspend`\n- Unsuspend: `POST /users/{id}/unsuspend`\n- Enroll: `POST /users/{id}/enrollments` with `{ course_id }`\n- Groups: `POST /groups/{groupId}/members` with `{ user_id }`\n- Progress: `GET /users/{id}/progress` (may return 404 on some plans — handled gracefully)",
+    "summary": "LearnWorlds API",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-db-roles",
+    "key": "db-roles",
+    "content": "`individual_student`, `school_admin`, `teacher`, `homeschool_parent`, `student`",
+    "summary": "DB Roles",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-stripe-webhook-flow",
+    "key": "stripe-webhook-flow",
+    "content": "checkout.session.completed → creates org+user → provisions LW user → sends welcome email\nsubscription.updated → recalculates seat/teacher limits from subscription items\nsubscription.deleted → sets org inactive → suspends all org users in LW\ninvoice.payment_failed → sends payment failed email",
+    "summary": "Stripe Webhook Flow",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-lw-group-env-vars--all-optiona",
+    "key": "lw-group-env-vars-all-optional-",
+    "content": "`LW_GROUP_ID_INDIVIDUAL_STUDENT`, `LW_GROUP_ID_TRIAL_STUDENT`, `LW_GROUP_ID_SCHOOL_ADMIN`,\n`LW_GROUP_ID_TEACHER`, `LW_GROUP_ID_STUDENT`, `LW_GROUP_ID_HOMESCHOOL_PARENT`",
+    "summary": "LW Group Env Vars (all optional)",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-security-notes",
+    "key": "security-notes",
+    "content": "- `randomPassword` uses `crypto.randomBytes` (fixed from Math.random)\n- JWT secret must be in env, not hardcoded\n- `.gitignore` excludes `.env`\n- Stripe webhook verified with `constructEvent` before processing",
+    "summary": "Security Notes",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-patterns",
+    "key": "patterns",
+    "content": "- All LW API calls wrapped in try/catch with non-fatal logging\n- Course enrollment catches 409 (already enrolled) silently\n- Group assignment also catches 409 silently\n- Dashboard progress gracefully returns empty on LW API error\n- `pending_credentials` table stores temp passwords for 15 min post-checkout",
+    "summary": "Patterns",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-beyond-the-curriculum-backend/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715125
+  },
+  {
+    "id": "mem-MEMORY-feedback",
+    "key": "feedback",
+    "content": "- [feedback_use_custom_pickers.md](feedback_use_custom_pickers.md) — Always use DatePicker, TimePicker, WeekPicker components (frontend/src/components/ui/) instead of native <input type=\"date/time/week\"> anywhere in the UI",
+    "summary": "Feedback",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715127
+  },
+  {
+    "id": "mem-MEMORY-project",
+    "key": "project",
+    "content": "- [project_scope.md](project_scope.md) — Full scope document for the HR Management System: client (Francesco Piscopo), developer (Usman Khalid), $4,500 fixed price, tech stack, all features, milestones, delivery terms, Italian language requirement\n- [project_design_patterns.md](project_design_patterns.md) — Complete UI design system: brand colors (navy #0D2137 + gold #C9973A), typography (Sora + DM Sans), card/banner/drawer/chart/button/form patterns, animation classes, role colors, avatar initi",
+    "summary": "Project",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715127
+  },
+  {
+    "id": "mem-feedback_use_custom_pickers----",
+    "key": "-",
+    "content": "name: Use custom picker components — not native inputs\ndescription: Always use DatePicker, TimePicker, WeekPicker components instead of native <input type=\"date\">, <input type=\"time\">, or <input type=\"week\"> in all UI work\ntype: feedback\n---\n\nAlways use the project's custom picker components instead of native HTML inputs:\n\n- **Date selection** → `import { DatePicker } from '../../components/ui/DatePicker'`\n  - Props: `value: string` (ISO 'YYYY-MM-DD'), `onChange: (v: string) => void`, optional `",
+    "summary": "---",
+    "namespace": "feedback_use_custom_pickers",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/feedback_use_custom_pickers.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715128
+  },
+  {
+    "id": "mem-project_deployment----",
+    "key": "-",
+    "content": "name: project_deployment\ndescription: Deployment architecture, Railway setup, FORCE_SEED usage, database folder structure, and demo accounts\ntype: project\n---",
+    "summary": "---",
+    "namespace": "project_deployment",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_deployment.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715129
+  },
+  {
+    "id": "mem-project_deployment-deployment-architecture",
+    "key": "deployment-architecture",
+    "content": "**Backend** → Railway (Docker, `backend/Dockerfile.railway`)\n**Frontend** → Vercel (`frontend/vercel.json`)\n**Database** → Railway PostgreSQL plugin\n**Local dev** → Docker (`docker-compose up --build`); user primarily uses Docker for local development",
+    "summary": "Deployment Architecture",
+    "namespace": "project_deployment",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_deployment.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715129
+  },
+  {
+    "id": "mem-project_deployment-railway-backend-startup-flow",
+    "key": "railway-backend-startup-flow",
+    "content": "1. `start.sh` runs `node dist/index.js`\n2. `index.ts` `start()` function checks `FORCE_SEED`:\n   - If `FORCE_SEED=true`: drops all tables + type, applies full schema, inserts demo data, then `app.listen`\n   - Otherwise: `app.listen` immediately (seed guard checks if companies exist)\n3. Health check: `GET /health` → `{ status: \"ok\" }`\n\n**Why:** `FORCE_SEED=true` handles old schema on Railway DB — drops everything and rebuilds clean.\n**After reset:** Remove `FORCE_SEED` env var to prevent re-seedi",
+    "summary": "Railway Backend Startup Flow",
+    "namespace": "project_deployment",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_deployment.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715129
+  },
+  {
+    "id": "mem-project_deployment-database-folder-structure",
+    "key": "database-folder-structure",
+    "content": "```\ndatabase/\n  migrations/           ← production only, run in order\n    001_initial_schema.sql   (baseline: companies, users, shifts, attendance)\n    002_phase1_schema.sql    (Phase 1: stores, login_attempts, audit_logs, role_module_permissions, new user columns)\n  seeds/                ← demo/staging ONLY — never run on production\n    demo_fusaro_uomo.sql     (full demo dataset)\nbackend/database/\n  schema.sql            ← combined full schema used by seed.ts for Railway deployment\n```\n\n**How ",
+    "summary": "Database Folder Structure",
+    "namespace": "project_deployment",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_deployment.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715129
+  },
+  {
+    "id": "mem-project_deployment-demo-accounts--password--passw",
+    "key": "demo-accounts-password-password123-",
+    "content": "### FUSARO UOMO (company 1)\n| Role | Email |\n|------|-------|\n| Admin | admin@fusarouomo.com |\n| HR | hr@fusarouomo.com |\n| Area Manager | areamanager@fusarouomo.com |\n| Store Manager Roma | manager.roma@fusarouomo.com |\n| Store Manager Milano | manager.milano@fusarouomo.com |\n| Employee | dipendente1@fusarouomo.com |\n| Store Terminal Roma | terminal.roma@fusarouomo.com |\n\n### Beta Industries (company 2)\n| Role | Email |\n|------|-------|\n| HR | hr@beta.com |\n| Store Manager Napoli | manager@beta",
+    "summary": "Demo Accounts (password: password123)",
+    "namespace": "project_deployment",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_deployment.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715129
+  },
+  {
+    "id": "mem-project_deployment-staging-test-guide",
+    "key": "staging-test-guide",
+    "content": "Full client guide: `docs/staging-test-guide.md`",
+    "summary": "Staging Test Guide",
+    "namespace": "project_deployment",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_deployment.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715129
+  },
+  {
+    "id": "mem-project_design_patterns----",
+    "key": "-",
+    "content": "name: UI Design Patterns\ndescription: Visual design system and component patterns used across the HR Management System frontend\ntype: project\n---",
+    "summary": "---",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-design-system-overview",
+    "key": "design-system-overview",
+    "content": "Brand: **FUSARO UOMO / HR Management System**\nPrimary color: `#0D2137` (deep navy)\nAccent color: `#C9973A` (gold)\n\nAll colors use CSS custom properties defined in `frontend/src/index.css`.\n\n---",
+    "summary": "Design System Overview",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-typography",
+    "key": "typography",
+    "content": "- Display font: `var(--font-display)` → **Sora**\n- Body font: `var(--font-body)` → **DM Sans**\n- Use `var(--font-display)` for headings, stat numbers, badges, monospace-like IDs\n- Use `var(--font-body)` for labels, paragraphs, form inputs\n\n---",
+    "summary": "Typography",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-color-tokens",
+    "key": "color-tokens",
+    "content": "```\n--primary: #0D2137       --accent: #C9973A\n--primary-mid: #163352   --accent-light: rgba(201,151,58,0.10)\n--surface: #FFFFFF        --surface-warm: #FAFAF8\n--background: #F2F0EC     --border: #E4E1DA\n--border-light: #EAE8E3   --border-focus: #C9973A\n--text-primary: #111827   --text-secondary: #374151\n--text-muted: #6B7280     --text-disabled: #9CA3AF\n--success: #15803D        --warning: #B45309\n--danger: #DC2626         --info: #0284C7\n```\n\n### Role Colors\n```\nadmin:         #C9973A  (gold)\n",
+    "summary": "Color Tokens",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-layout---spacing",
+    "key": "layout-spacing",
+    "content": "- Sidebar width: `252px` collapsed → `64px`\n- Content padding: `var(--content-padding)` = `28px`\n- Header height: `60px`\n- Page container: `maxWidth: 1200px, margin: 0 auto`\n- Section gap: `24px`\n- Card internal padding: `22px 24px`\n\n### Border Radius Scale\n```\n--radius-xs: 4px   --radius-sm: 6px\n--radius: 10px     --radius-lg: 14px   --radius-xl: 20px\n```\n\n### Shadow Scale\n```\n--shadow-xs   --shadow-sm   --shadow   --shadow-lg   --shadow-accent\n```\n\n---",
+    "summary": "Layout & Spacing",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-card-pattern",
+    "key": "card-pattern",
+    "content": "Standard surface card:\n```tsx\n<div style={{\n  background: 'var(--surface)',\n  borderRadius: 'var(--radius-lg)',\n  border: '1px solid var(--border)',\n  boxShadow: 'var(--shadow-sm)',\n  overflow: 'hidden',\n}}>\n  {/* Header */}\n  <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--border-light)' }}>\n    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px', letterSpacing: '-0.01em' }}>Title</h3>\n    <p ",
+    "summary": "Card Pattern",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-stat-numbers",
+    "key": "stat-numbers",
+    "content": "Large numbers use animation class `stat-num` and:\n```tsx\nfontSize: '38px', fontWeight: 700, fontFamily: 'var(--font-display)',\nlineHeight: 1, letterSpacing: '-0.03em'\n```\n\n---",
+    "summary": "Stat Numbers",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-page-header-banners",
+    "key": "page-header-banners",
+    "content": "Role-specific gradient banners at top of each dashboard:\n- Admin: `linear-gradient(135deg, var(--primary) 0%, #1A3B5C 100%)`\n- HR: `linear-gradient(135deg, #0284C7 0%, #0369A1 100%)`\n- Area Manager: `linear-gradient(135deg, #15803D 0%, #166534 100%)`\n- Store Manager: `linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)`\n\nBanner structure: title left, stat or status pill right, `boxShadow: 0 4px 20px rgba(r,g,b,0.20)`.\n\n---",
+    "summary": "Page Header Banners",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-animations",
+    "key": "animations",
+    "content": "All defined in `index.css`:\n- `.page-enter` → `fadeSlideUp` (0.28s ease)\n- `.pop-in` → `popIn` spring (0.22s cubic-bezier(0.34,1.56,0.64,1))\n- `.card-lift:hover` → `translateY(-2px)` + shadow-lg\n- `.drawer-backdrop` → `backdropFadeIn` (0.2s)\n- `.drawer-panel` → `drawerSlideIn` (0.32s cubic-bezier(0.16,1,0.3,1))\n- `.stat-num` → `countIn` spring (0.4s)\n\n---",
+    "summary": "Animations",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-buttons",
+    "key": "buttons",
+    "content": "Use className `btn` + variant class:\n- `btn-primary` — navy background, hover darkens + translateY(-1px)\n- `btn-accent` — gold background\n- `btn-secondary` — bordered, no fill\n- `btn-danger` — red fill\n- `btn-ghost` — transparent, slight hover fill\n\n---",
+    "summary": "Buttons",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-side-drawer-pattern",
+    "key": "side-drawer-pattern",
+    "content": "Used for create/edit forms. Renders via `createPortal(content, document.body)` to escape Layout stacking context caused by `overflow: hidden`.\n\nStructure:\n- Backdrop: `position: fixed, inset: 0, zIndex: 1000, background: rgba(13,33,55,0.48), backdropFilter: blur(3px)`\n- Panel: `width: min(560px, 100vw), height: 100%` from right edge\n- Gold-to-navy accent stripe at top: `height: 3px, background: linear-gradient(90deg, var(--accent), var(--primary))`\n- Step indicator for multi-step forms\n\n**Why po",
+    "summary": "Side Drawer Pattern",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-charts--recharts-",
+    "key": "charts-recharts-",
+    "content": "Library: `recharts` ^3.x\n\nCommon tooltip style:\n```tsx\n<div style={{\n  background: 'var(--surface)', border: '1px solid var(--border)',\n  borderRadius: 'var(--radius-sm)', padding: '8px 12px',\n  boxShadow: 'var(--shadow)', fontSize: '12px', fontFamily: 'var(--font-body)',\n}}>\n```\n\nChart axis ticks: `fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-body)'`\nGrid lines: `strokeDasharray=\"3 3\" stroke=\"var(--border-light)\"`\nAxes: `axisLine={false} tickLine={false}`\nBar radius: `[4,4,0",
+    "summary": "Charts (Recharts)",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-forms",
+    "key": "forms",
+    "content": "- Input height: `38px`\n- Focus ring: `border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light)`\n- Error state: border red (`var(--danger)`), error message 11px below\n- Label: 12px, 600 weight, `var(--text-secondary)`, 5px bottom margin\n- Section dividers: thin `var(--border-light)` rule with uppercase label\n\n---",
+    "summary": "Forms",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-internationalization",
+    "key": "internationalization",
+    "content": "- Library: `react-i18next`\n- Languages: Italian (default) and English\n- Locales: `frontend/src/i18n/locales/it.ts` and `en.ts`\n- Dynamic values use i18next interpolation: `t('key', { year: new Date().getFullYear() })`\n- Translation key convention: `module.submodule.keyName` camelCase\n\n---",
+    "summary": "Internationalization",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_design_patterns-avatar-initials",
+    "key": "avatar-initials",
+    "content": "Deterministic color from name hash using 6-color palette:\n```ts\nconst AVATAR_PALETTE = ['#0D2137','#163352','#8B6914','#1B4D3E','#2C5282','#5B2333'];\nfunction getAvatarColor(name: string): string {\n  let hash = 0;\n  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);\n  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];\n}\n```\nAvatar circle: `34px, borderRadius: 50%, fontSize: 11px, fontWeight: 700`.",
+    "summary": "Avatar Initials",
+    "namespace": "project_design_patterns",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_design_patterns.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_git_remotes----",
+    "key": "-",
+    "content": "name: project_git_remotes\ndescription: Git remote repos for frontend and backend, SSH key, and push/pull procedure\ntype: reference\n---",
+    "summary": "---",
+    "namespace": "project_git_remotes",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_git_remotes.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_git_remotes-repositories",
+    "key": "repositories",
+    "content": "| Subfolder | Remote name | GitHub URL |\n|-----------|-------------|------------|\n| `frontend/` | `frontend-origin` | git@github.com:usmankhalidk/hr-system-demo-frontend.git |\n| `backend/`  | `backend-origin`  | git@github.com:usmankhalidk/hr-system-demo-backend.git  |\n\nBoth repos use branch: **main**",
+    "summary": "Repositories",
+    "namespace": "project_git_remotes",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_git_remotes.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_git_remotes-ssh-key",
+    "key": "ssh-key",
+    "content": "- Config host: `github.com` (in `~/.ssh/config`)\n- Identity file: `~/.ssh/id_ed25519`\n- Key passphrase: `1234`",
+    "summary": "SSH Key",
+    "namespace": "project_git_remotes",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_git_remotes.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_git_remotes-how-to-push-changes",
+    "key": "how-to-push-changes",
+    "content": "This is a monorepo — use `git subtree` to push each subfolder to its own remote.\n\n**Backend:**\n```bash\neval \"$(ssh-agent -s)\" && echo \"1234\" | SSH_ASKPASS=/bin/cat ssh-add ~/.ssh/id_ed25519\ngit subtree split --prefix=backend -b temp-backend\ngit push backend-origin temp-backend:main --force\ngit branch -D temp-backend\n```\n\n**Frontend:**\n```bash\neval \"$(ssh-agent -s)\" && echo \"1234\" | SSH_ASKPASS=/bin/cat ssh-add ~/.ssh/id_ed25519\ngit subtree split --prefix=frontend -b temp-frontend\ngit push fronte",
+    "summary": "How to push changes",
+    "namespace": "project_git_remotes",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_git_remotes.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715130
+  },
+  {
+    "id": "mem-project_scope----",
+    "key": "-",
+    "content": "name: HR Management System — Full Project Scope\ndescription: Complete scope, tech stack, feature list, milestones, and delivery terms for the HR management system project\ntype: project\n---",
+    "summary": "---",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-hr-management-system---full-sc",
+    "key": "hr-management-system-full-scope",
+    "content": "**Client:** Francesco Piscopo\n**Developer:** Usman Khalid\n**Total Fixed Price:** $4,500\n**Language:** Italian (UI, notifications, emails, manuals, tutorials)\n\n---",
+    "summary": "HR Management System — Full Scope",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-overview",
+    "key": "overview",
+    "content": "A full HR management platform for multi-company and multi-store retail operations. Covers: employee management, shift scheduling, QR attendance, leave management, documents & e-signature, ATS with Indeed integration, dashboards, notifications, automations, onboarding, KPI reporting. Entire interface and communication in Italian.\n\n---",
+    "summary": "Overview",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-technology-stack",
+    "key": "technology-stack",
+    "content": "- **Frontend:** React 18 + TypeScript + Vite\n- **Backend:** Node.js + Express + TypeScript\n- **Auth:** JWT + bcrypt\n- **Database:** PostgreSQL (schema + migrations)\n- **Infrastructure:** Docker for deployment\n- **Delivery:** Hosting selected by client + private GitHub repo with continuous commits\n\n---",
+    "summary": "Technology Stack",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-roles",
+    "key": "roles",
+    "content": "Admin, HR, Area Manager, Store Manager, Employee, Store Terminal\n\n---",
+    "summary": "Roles",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-feature-scope",
+    "key": "feature-scope",
+    "content": "### 3.1 Authentication & RBAC\n- JWT tokens + hashed passwords\n- Admin can enable/disable any module, page, widget, notification, automation, or visibility per role\n- Multi-company: 2 isolated companies\n- Multi-store: unlimited stores (Admin can create new stores)\n- Hierarchy: employee belongs to company + store + supervisor\n- Employee restriction: can be limited to attendance + personal documents only\n- Basic audit logging\n\n### 3.2 Employee Management\n- Create / update / deactivate employees\n- F",
+    "summary": "Feature Scope",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-milestones---payment",
+    "key": "milestones-payment",
+    "content": "Payment only after each milestone is delivered, demonstrated, reviewed, tested, and **explicitly approved by the Client**.\n\n| Milestone | Deliverables |\n|-----------|-------------|\n| **M1 — Foundation & Core** | Roles, RBAC, admin controls, multi-company, unlimited stores, employee management, base home screens |\n| **M2 — Shifts + Attendance** | Shift scheduling, break workflow, import/export, QR terminal, offline mode, basic leave |\n| **M3 — Documents + ATS + Notifications** | Documents + ZIP r",
+    "summary": "Milestones & Payment",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-final-delivery---handover",
+    "key": "final-delivery-handover",
+    "content": "- Full source code (frontend + backend)\n- Full GitHub repository transferred to Client\n- Documentation: setup, deploy, env vars, DB schema, migrations\n- Production deployment\n- Manuals in Italian for all roles\n- Video tutorials in Italian\n- Optional walkthrough call\n\n---",
+    "summary": "Final Delivery & Handover",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-post-delivery-maintenance",
+    "key": "post-delivery-maintenance",
+    "content": "- Duration: 1 month\n- 20 hours included\n- Bug fixes and minor adjustments\n- Response time: within 24 hours\n\n---",
+    "summary": "Post-Delivery Maintenance",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_scope-key-rule",
+    "key": "key-rule",
+    "content": "All UI text, notifications, emails, manuals, training videos must be in **Italian**.",
+    "summary": "Key Rule",
+    "namespace": "project_scope",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_scope.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715131
+  },
+  {
+    "id": "mem-project_technical_state----",
+    "key": "-",
+    "content": "name: project_technical_state\ndescription: Current technical state — Phase 2 core complete, home dashboard widgets now live\ntype: project\n---",
+    "summary": "---",
+    "namespace": "project_technical_state",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_technical_state.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715133
+  },
+  {
+    "id": "mem-project_technical_state-phase-2-status--complete",
+    "key": "phase-2-status-complete",
+    "content": "Branch: `main` (local, not yet pushed to remotes)\nRemotes: `backend-origin` (GitHub) and `frontend-origin` (GitHub) — push via git subtree\n\n### All Phase 2 features implemented\n\n**Core M2 deliverables (all done):**\n1. Offline Terminal Sync — `POST /api/attendance/sync`\n2. Attendance Anomaly Detection — `GET /api/attendance/anomalies`, AnomalyList.tsx\n3. Store Affluence Suggestions UI — AffluencePanel.tsx\n4. Sick Leave Medical Certificate Upload — migration 006, multer, BYTEA storage\n5. Leave-Shi",
+    "summary": "Phase 2 Status: COMPLETE",
+    "namespace": "project_technical_state",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-hr-system-tech-demo/memory/project_technical_state.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715133
+  },
+  {
+    "id": "mem-project_stickfind_ui----",
+    "key": "-",
+    "content": "name: StickFind UI polish session\ndescription: Summary of UI/UX work done on the four main frontend pages\ntype: project\n---\n\nUI/UX overhaul completed across all four public-facing pages.\n\n**Why:** User wanted mobile-first polish, correct info on each page, and consistency across the finder/claim/setup flows.\n\n**How to apply:** Be aware these pages were intentionally redesigned — don't revert patterns without reason.\n\nChanges made:\n- `Layout.jsx`: Added StickFind SF logo header on every page; no ",
+    "summary": "---",
+    "namespace": "project_stickfind_ui",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-shopify-webhook/memory/project_stickfind_ui.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715134
+  },
+  {
+    "id": "mem-project_stickfind_ui-twilio-call-masking---sms-prox",
+    "key": "twilio-call-masking-sms-proxy-completed-2026-03-13",
+    "content": "Implementation: one Twilio number routes calls/SMS between owner and finder anonymously.\n\n**Routing logic (in `src/controllers/twilioController.js`):**\n- Inbound FROM matches `users.phone` → caller is owner → dial `recovery_events.finder_phone`\n- Inbound FROM matches `recovery_events.finder_phone` → caller is finder → dial owner phone\n- Both parties see Twilio number as caller ID (masks real numbers)\n\n**New files:**\n- `migrations/007_add_finder_phone_to_recovery_events.sql` — adds `finder_phone ",
+    "summary": "Twilio call masking + SMS proxy (completed 2026-03-13)",
+    "namespace": "project_stickfind_ui",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/user/.claude/projects/-Users-user-shopify-webhook/memory/project_stickfind_ui.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1774332715135
+  },
+  {
+    "id": "insight-1774344984435-5cvo",
+    "key": "frequent-edit-unknown",
+    "content": "File unknown was edited 27 times this session — likely a hot path worth monitoring.",
+    "summary": "Frequently edited: unknown (27x)",
+    "namespace": "insights",
+    "type": "procedural",
+    "metadata": {
+      "sourceFile": "unknown",
+      "editCount": 27,
+      "autoGenerated": true
+    },
+    "createdAt": 1774344984435
+  }
+]

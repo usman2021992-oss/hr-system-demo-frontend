@@ -1,0 +1,23 @@
+{
+  "id": "session-1774346347774",
+  "startedAt": "2026-03-24T09:59:07.775Z",
+  "cwd": "/Users/user/hr-system-tech-demo/frontend",
+  "context": {
+    "lastMatchedPatterns": [
+      "mem-MEMORY-account-creation---password-fl",
+      "mem-project_scope-milestones---payment",
+      "mem-project_scope-feature-scope",
+      "mem-MEMORY-bug-fixes--session-4-",
+      "mem-project_deployment-database-folder-structure"
+    ]
+  },
+  "metrics": {
+    "edits": 77,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "updatedAt": "2026-03-24T11:10:02.716Z",
+  "endedAt": "2026-03-24T11:14:48.932Z",
+  "duration": 4541159
+}

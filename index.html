@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Veylohr —  HR MANAGEMENT</title>
+    <link rel="icon" type="image/png" href="/IMG_5144.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" />
+    <script>
+      (function () {
+        var key = 'hr_app_chunk_reload_v1';
+        var param = '__hr_app_reload';
+        var windowMs = 60000;
+        var maxReloads = 2;
+
+        function textOf(value) {
+          if (!value) return '';
+          if (typeof value === 'string') return value;
+          var parts = [];
+          if (value.message) parts.push(value.message);
+          if (value.name) parts.push(value.name);
+          if (value.reason) parts.push(textOf(value.reason));
+          if (value.error) parts.push(textOf(value.error));
+          var target = value.target || value.srcElement;
+          if (target && (target.src || target.href)) parts.push(target.src || target.href);
+          return parts.join(' ');
+        }
+
+        function isAssetEvent(value) {
+          var target = value && (value.target || value.srcElement);
+          if (!target) return false;
+          var src = target.src || target.href || '';
+          var asset = /\/assets\/.+\.(js|mjs|css)(\?|$)/i.test(src);
+          var tag = String(target.tagName || '').toLowerCase();
+          var rel = String(target.rel || '').toLowerCase();
+          return (
+            (tag === 'script' && (target.type === 'module' || asset)) ||
+            (tag === 'link' && asset && (rel.indexOf('modulepreload') !== -1 || rel.indexOf('stylesheet') !== -1))
+          );
+        }
+
+        function shouldRecover(value) {
+          if (isAssetEvent(value)) return true;
+          var text = textOf(value).toLowerCase();
+          return (
+            text.indexOf('failed to fetch dynamically imported module') !== -1 ||
+            text.indexOf('importing a module script failed') !== -1 ||
+            text.indexOf('chunkloaderror') !== -1 ||
+            text.indexOf('not a valid javascript mime type') !== -1 ||
+            text.indexOf('expected a javascript-or-wasm module script') !== -1 ||
+            (text.indexOf('text/html') !== -1 && text.indexOf('javascript') !== -1)
+          );
+        }
+
+        function canReload(now) {
+          try {
+            var previous = JSON.parse(sessionStorage.getItem(key) || 'null');
+            if (!previous || now - previous.firstAt > windowMs) {
+              sessionStorage.setItem(key, JSON.stringify({ firstAt: now, lastAt: now, count: 1 }));
+              return true;
+            }
+            if (previous.count >= maxReloads) return false;
+            sessionStorage.setItem(key, JSON.stringify({ firstAt: previous.firstAt, lastAt: now, count: previous.count + 1 }));
+            return true;
+          } catch (error) {
+            return true;
+          }
+        }
+
+        function reloadFresh() {
+          var now = Date.now();
+          if (!canReload(now)) return;
+          var url = new URL(window.location.href);
+          url.searchParams.set(param, String(now));
+          window.location.replace(url.toString());
+        }
+
+        window.addEventListener('error', function (event) {
+          var reason = event.error || event;
+          if (shouldRecover(reason)) {
+            event.preventDefault();
+            reloadFresh();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (event) {
+          if (shouldRecover(event.reason)) {
+            event.preventDefault();
+            reloadFresh();
+          }
+        });
+      }());
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="modal-root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /careers
+Allow: /privacy
+Allow: /terms
+Allow: /cookie-policy
+Allow: /sitemap.xml
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: Indeedbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://veylohr.com/sitemap.xml

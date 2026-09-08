@@ -1,0 +1,1441 @@
+{
+  "version": 1,
+  "updatedAt": 1774512036513,
+  "nodeCount": 106,
+  "nodes": {
+    "mem-MEMORY-identity": {
+      "id": "mem-MEMORY-identity",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715115
+    },
+    "mem-MEMORY-phase-status": {
+      "id": "mem-MEMORY-phase-status",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715115
+    },
+    "mem-MEMORY-phase-2a-success-criteria": {
+      "id": "mem-MEMORY-phase-2a-success-criteria",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-planned-integrations--not-yet-": {
+      "id": "mem-MEMORY-planned-integrations--not-yet-",
+      "category": "core",
+      "confidence": 0.55,
+      "accessCount": 1,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-business-model": {
+      "id": "mem-MEMORY-business-model",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-connector-url---auth": {
+      "id": "mem-MEMORY-connector-url---auth",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-oauth-notes": {
+      "id": "mem-MEMORY-oauth-notes",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-contact": {
+      "id": "mem-MEMORY-contact",
+      "category": "core",
+      "confidence": 0.55,
+      "accessCount": 1,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-key-files": {
+      "id": "mem-MEMORY-key-files",
+      "category": "core",
+      "confidence": 0.7600000000000002,
+      "accessCount": 6,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-design-system--light-theme---j": {
+      "id": "mem-MEMORY-design-system--light-theme---j",
+      "category": "core",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715116
+    },
+    "mem-MEMORY-frontend-architecture--phase-2": {
+      "id": "mem-MEMORY-frontend-architecture--phase-2",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715116
+    },
+    "mem-project-context-jigsaw-iq---full-project-conte": {
+      "id": "mem-project-context-jigsaw-iq---full-project-conte",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715116
+    },
+    "mem-project-context-business-model": {
+      "id": "mem-project-context-business-model",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-phase-budget---scope": {
+      "id": "mem-project-context-phase-budget---scope",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-phase-2a-open-questions--for-a": {
+      "id": "mem-project-context-phase-2a-open-questions--for-a",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-phase-2b-scope--future-": {
+      "id": "mem-project-context-phase-2b-scope--future-",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-integrations-by-phase": {
+      "id": "mem-project-context-integrations-by-phase",
+      "category": "project-context",
+      "confidence": 0.55,
+      "accessCount": 1,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-mcp-protocol-format--json-rpc-": {
+      "id": "mem-project-context-mcp-protocol-format--json-rpc-",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-oauth-implementation-notes": {
+      "id": "mem-project-context-oauth-implementation-notes",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-multi-tenant-request-flow": {
+      "id": "mem-project-context-multi-tenant-request-flow",
+      "category": "project-context",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-connector-url-format": {
+      "id": "mem-project-context-connector-url-format",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-database-notes": {
+      "id": "mem-project-context-database-notes",
+      "category": "project-context",
+      "confidence": 0.6100000000000001,
+      "accessCount": 3,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-deployment": {
+      "id": "mem-project-context-deployment",
+      "category": "project-context",
+      "confidence": 0.53,
+      "accessCount": 1,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-4-week-timeline": {
+      "id": "mem-project-context-4-week-timeline",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715117
+    },
+    "mem-project-context-success-criteria--phase-2a-don": {
+      "id": "mem-project-context-success-criteria--phase-2a-don",
+      "category": "project-context",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715117
+    },
+    "mem-MEMORY-memory-index": {
+      "id": "mem-MEMORY-memory-index",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715120
+    },
+    "mem-feedback_no_superpowers----": {
+      "id": "mem-feedback_no_superpowers----",
+      "category": "feedback_no_superpowers",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715121
+    },
+    "mem-MEMORY-project--beyond-the-curriculum": {
+      "id": "mem-MEMORY-project--beyond-the-curriculum",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-learnworlds-sso--session-7-": {
+      "id": "mem-MEMORY-learnworlds-sso--session-7-",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-ui-design-status--completed-se": {
+      "id": "mem-MEMORY-ui-design-status--completed-se",
+      "category": "core",
+      "confidence": 0.7100000000000002,
+      "accessCount": 5,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-subscription-expiry-logic--com": {
+      "id": "mem-MEMORY-subscription-expiry-logic--com",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-account-creation---password-fl": {
+      "id": "mem-MEMORY-account-creation---password-fl",
+      "category": "core",
+      "confidence": 0.7600000000000002,
+      "accessCount": 6,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-resource-library--completed-se": {
+      "id": "mem-MEMORY-resource-library--completed-se",
+      "category": "core",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-homeschool-module-fixes--sessi": {
+      "id": "mem-MEMORY-homeschool-module-fixes--sessi",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-super-admin-manual-users---wel": {
+      "id": "mem-MEMORY-super-admin-manual-users---wel",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-revoked-manual-user-login---da": {
+      "id": "mem-MEMORY-revoked-manual-user-login---da",
+      "category": "core",
+      "confidence": 0.53,
+      "accessCount": 1,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-dual-role---individual-org-con": {
+      "id": "mem-MEMORY-dual-role---individual-org-con",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-MEMORY-bug-fixes--session-4-": {
+      "id": "mem-MEMORY-bug-fixes--session-4-",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715123
+    },
+    "mem-project-context-overview": {
+      "id": "mem-project-context-overview",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-tech-stack": {
+      "id": "mem-project-context-tech-stack",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-what-s-already-built": {
+      "id": "mem-project-context-what-s-already-built",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-three-registration-types": {
+      "id": "mem-project-context-three-registration-types",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-database-schema": {
+      "id": "mem-project-context-database-schema",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-roles--rbac-": {
+      "id": "mem-project-context-roles--rbac-",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-seat-management": {
+      "id": "mem-project-context-seat-management",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-stripe-webhook-events": {
+      "id": "mem-project-context-stripe-webhook-events",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-stripe-price-id---seat-mapping": {
+      "id": "mem-project-context-stripe-price-id---seat-mapping",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-learnworlds-api-v2": {
+      "id": "mem-project-context-learnworlds-api-v2",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-four-dashboards": {
+      "id": "mem-project-context-four-dashboards",
+      "category": "project-context",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-free-trial-logic": {
+      "id": "mem-project-context-free-trial-logic",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-resource-library-access": {
+      "id": "mem-project-context-resource-library-access",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-frontend-ux-fixes-needed": {
+      "id": "mem-project-context-frontend-ux-fixes-needed",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-milestones": {
+      "id": "mem-project-context-milestones",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-out-of-scope": {
+      "id": "mem-project-context-out-of-scope",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-project-context-access-needed": {
+      "id": "mem-project-context-access-needed",
+      "category": "project-context",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715124
+    },
+    "mem-MEMORY-project-overview": {
+      "id": "mem-MEMORY-project-overview",
+      "category": "core",
+      "confidence": 0.6600000000000001,
+      "accessCount": 4,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-stack": {
+      "id": "mem-MEMORY-stack",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-learnworlds-api": {
+      "id": "mem-MEMORY-learnworlds-api",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-db-roles": {
+      "id": "mem-MEMORY-db-roles",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-stripe-webhook-flow": {
+      "id": "mem-MEMORY-stripe-webhook-flow",
+      "category": "core",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-lw-group-env-vars--all-optiona": {
+      "id": "mem-MEMORY-lw-group-env-vars--all-optiona",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-security-notes": {
+      "id": "mem-MEMORY-security-notes",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-patterns": {
+      "id": "mem-MEMORY-patterns",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715125
+    },
+    "mem-MEMORY-feedback": {
+      "id": "mem-MEMORY-feedback",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715127
+    },
+    "mem-MEMORY-project": {
+      "id": "mem-MEMORY-project",
+      "category": "core",
+      "confidence": 0.6300000000000001,
+      "accessCount": 3,
+      "createdAt": 1774332715127
+    },
+    "mem-feedback_use_custom_pickers----": {
+      "id": "mem-feedback_use_custom_pickers----",
+      "category": "feedback_use_custom_pickers",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715128
+    },
+    "mem-project_deployment----": {
+      "id": "mem-project_deployment----",
+      "category": "project_deployment",
+      "confidence": 0.6300000000000001,
+      "accessCount": 3,
+      "createdAt": 1774332715129
+    },
+    "mem-project_deployment-deployment-architecture": {
+      "id": "mem-project_deployment-deployment-architecture",
+      "category": "project_deployment",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715129
+    },
+    "mem-project_deployment-railway-backend-startup-flow": {
+      "id": "mem-project_deployment-railway-backend-startup-flow",
+      "category": "project_deployment",
+      "confidence": 0.6100000000000001,
+      "accessCount": 3,
+      "createdAt": 1774332715129
+    },
+    "mem-project_deployment-database-folder-structure": {
+      "id": "mem-project_deployment-database-folder-structure",
+      "category": "project_deployment",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715129
+    },
+    "mem-project_deployment-demo-accounts--password--passw": {
+      "id": "mem-project_deployment-demo-accounts--password--passw",
+      "category": "project_deployment",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715129
+    },
+    "mem-project_deployment-staging-test-guide": {
+      "id": "mem-project_deployment-staging-test-guide",
+      "category": "project_deployment",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715129
+    },
+    "mem-project_design_patterns----": {
+      "id": "mem-project_design_patterns----",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-design-system-overview": {
+      "id": "mem-project_design_patterns-design-system-overview",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-typography": {
+      "id": "mem-project_design_patterns-typography",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-color-tokens": {
+      "id": "mem-project_design_patterns-color-tokens",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-layout---spacing": {
+      "id": "mem-project_design_patterns-layout---spacing",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-card-pattern": {
+      "id": "mem-project_design_patterns-card-pattern",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-stat-numbers": {
+      "id": "mem-project_design_patterns-stat-numbers",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-page-header-banners": {
+      "id": "mem-project_design_patterns-page-header-banners",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-animations": {
+      "id": "mem-project_design_patterns-animations",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-buttons": {
+      "id": "mem-project_design_patterns-buttons",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-side-drawer-pattern": {
+      "id": "mem-project_design_patterns-side-drawer-pattern",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-charts--recharts-": {
+      "id": "mem-project_design_patterns-charts--recharts-",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-forms": {
+      "id": "mem-project_design_patterns-forms",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-internationalization": {
+      "id": "mem-project_design_patterns-internationalization",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_design_patterns-avatar-initials": {
+      "id": "mem-project_design_patterns-avatar-initials",
+      "category": "project_design_patterns",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_git_remotes----": {
+      "id": "mem-project_git_remotes----",
+      "category": "project_git_remotes",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_git_remotes-repositories": {
+      "id": "mem-project_git_remotes-repositories",
+      "category": "project_git_remotes",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_git_remotes-ssh-key": {
+      "id": "mem-project_git_remotes-ssh-key",
+      "category": "project_git_remotes",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_git_remotes-how-to-push-changes": {
+      "id": "mem-project_git_remotes-how-to-push-changes",
+      "category": "project_git_remotes",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715130
+    },
+    "mem-project_scope----": {
+      "id": "mem-project_scope----",
+      "category": "project_scope",
+      "confidence": 0.6300000000000001,
+      "accessCount": 3,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-hr-management-system---full-sc": {
+      "id": "mem-project_scope-hr-management-system---full-sc",
+      "category": "project_scope",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-overview": {
+      "id": "mem-project_scope-overview",
+      "category": "project_scope",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-technology-stack": {
+      "id": "mem-project_scope-technology-stack",
+      "category": "project_scope",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-roles": {
+      "id": "mem-project_scope-roles",
+      "category": "project_scope",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-feature-scope": {
+      "id": "mem-project_scope-feature-scope",
+      "category": "project_scope",
+      "confidence": 0.5800000000000001,
+      "accessCount": 2,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-milestones---payment": {
+      "id": "mem-project_scope-milestones---payment",
+      "category": "project_scope",
+      "confidence": 0.6900000000000002,
+      "accessCount": 5,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-final-delivery---handover": {
+      "id": "mem-project_scope-final-delivery---handover",
+      "category": "project_scope",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-post-delivery-maintenance": {
+      "id": "mem-project_scope-post-delivery-maintenance",
+      "category": "project_scope",
+      "confidence": 0.55,
+      "accessCount": 1,
+      "createdAt": 1774332715131
+    },
+    "mem-project_scope-key-rule": {
+      "id": "mem-project_scope-key-rule",
+      "category": "project_scope",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715131
+    },
+    "mem-project_technical_state----": {
+      "id": "mem-project_technical_state----",
+      "category": "project_technical_state",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774332715133
+    },
+    "mem-project_technical_state-phase-2-status--complete": {
+      "id": "mem-project_technical_state-phase-2-status--complete",
+      "category": "project_technical_state",
+      "confidence": 0.6100000000000001,
+      "accessCount": 3,
+      "createdAt": 1774332715133
+    },
+    "mem-project_stickfind_ui----": {
+      "id": "mem-project_stickfind_ui----",
+      "category": "project_stickfind_ui",
+      "confidence": 0.6900000000000002,
+      "accessCount": 5,
+      "createdAt": 1774332715134
+    },
+    "mem-project_stickfind_ui-twilio-call-masking---sms-prox": {
+      "id": "mem-project_stickfind_ui-twilio-call-masking---sms-prox",
+      "category": "project_stickfind_ui",
+      "confidence": 0.55,
+      "accessCount": 1,
+      "createdAt": 1774332715135
+    },
+    "insight-1774344984435-5cvo": {
+      "id": "insight-1774344984435-5cvo",
+      "category": "insights",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1774344984435
+    }
+  },
+  "edges": [
+    {
+      "sourceId": "mem-MEMORY-identity",
+      "targetId": "mem-MEMORY-phase-status",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-phase-status",
+      "targetId": "mem-MEMORY-phase-2a-success-criteria",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-phase-2a-success-criteria",
+      "targetId": "mem-MEMORY-planned-integrations--not-yet-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-planned-integrations--not-yet-",
+      "targetId": "mem-MEMORY-business-model",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-business-model",
+      "targetId": "mem-MEMORY-connector-url---auth",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-connector-url---auth",
+      "targetId": "mem-MEMORY-oauth-notes",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-oauth-notes",
+      "targetId": "mem-MEMORY-contact",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-contact",
+      "targetId": "mem-MEMORY-key-files",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-key-files",
+      "targetId": "mem-MEMORY-design-system--light-theme---j",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-design-system--light-theme---j",
+      "targetId": "mem-MEMORY-frontend-architecture--phase-2",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-jigsaw-iq---full-project-conte",
+      "targetId": "mem-project-context-business-model",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-business-model",
+      "targetId": "mem-project-context-phase-budget---scope",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-phase-budget---scope",
+      "targetId": "mem-project-context-phase-2a-open-questions--for-a",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-phase-2a-open-questions--for-a",
+      "targetId": "mem-project-context-phase-2b-scope--future-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-phase-2b-scope--future-",
+      "targetId": "mem-project-context-integrations-by-phase",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-integrations-by-phase",
+      "targetId": "mem-project-context-mcp-protocol-format--json-rpc-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-mcp-protocol-format--json-rpc-",
+      "targetId": "mem-project-context-oauth-implementation-notes",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-oauth-implementation-notes",
+      "targetId": "mem-project-context-multi-tenant-request-flow",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-multi-tenant-request-flow",
+      "targetId": "mem-project-context-connector-url-format",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-connector-url-format",
+      "targetId": "mem-project-context-database-notes",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-database-notes",
+      "targetId": "mem-project-context-deployment",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-deployment",
+      "targetId": "mem-project-context-4-week-timeline",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-4-week-timeline",
+      "targetId": "mem-project-context-success-criteria--phase-2a-don",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-project--beyond-the-curriculum",
+      "targetId": "mem-MEMORY-learnworlds-sso--session-7-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-learnworlds-sso--session-7-",
+      "targetId": "mem-MEMORY-ui-design-status--completed-se",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-ui-design-status--completed-se",
+      "targetId": "mem-MEMORY-subscription-expiry-logic--com",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-subscription-expiry-logic--com",
+      "targetId": "mem-MEMORY-account-creation---password-fl",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-account-creation---password-fl",
+      "targetId": "mem-MEMORY-resource-library--completed-se",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-resource-library--completed-se",
+      "targetId": "mem-MEMORY-homeschool-module-fixes--sessi",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-homeschool-module-fixes--sessi",
+      "targetId": "mem-MEMORY-super-admin-manual-users---wel",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-super-admin-manual-users---wel",
+      "targetId": "mem-MEMORY-revoked-manual-user-login---da",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-revoked-manual-user-login---da",
+      "targetId": "mem-MEMORY-dual-role---individual-org-con",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-dual-role---individual-org-con",
+      "targetId": "mem-MEMORY-bug-fixes--session-4-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-overview",
+      "targetId": "mem-project-context-tech-stack",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-tech-stack",
+      "targetId": "mem-project-context-what-s-already-built",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-what-s-already-built",
+      "targetId": "mem-project-context-three-registration-types",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-three-registration-types",
+      "targetId": "mem-project-context-database-schema",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-database-schema",
+      "targetId": "mem-project-context-roles--rbac-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-roles--rbac-",
+      "targetId": "mem-project-context-seat-management",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-seat-management",
+      "targetId": "mem-project-context-stripe-webhook-events",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-stripe-webhook-events",
+      "targetId": "mem-project-context-stripe-price-id---seat-mapping",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-stripe-price-id---seat-mapping",
+      "targetId": "mem-project-context-learnworlds-api-v2",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-learnworlds-api-v2",
+      "targetId": "mem-project-context-four-dashboards",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-four-dashboards",
+      "targetId": "mem-project-context-free-trial-logic",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-free-trial-logic",
+      "targetId": "mem-project-context-resource-library-access",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-resource-library-access",
+      "targetId": "mem-project-context-frontend-ux-fixes-needed",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-frontend-ux-fixes-needed",
+      "targetId": "mem-project-context-milestones",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-milestones",
+      "targetId": "mem-project-context-out-of-scope",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project-context-out-of-scope",
+      "targetId": "mem-project-context-access-needed",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-project-overview",
+      "targetId": "mem-MEMORY-stack",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-stack",
+      "targetId": "mem-MEMORY-key-files",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-key-files",
+      "targetId": "mem-MEMORY-learnworlds-api",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-learnworlds-api",
+      "targetId": "mem-MEMORY-db-roles",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-db-roles",
+      "targetId": "mem-MEMORY-stripe-webhook-flow",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-stripe-webhook-flow",
+      "targetId": "mem-MEMORY-lw-group-env-vars--all-optiona",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-lw-group-env-vars--all-optiona",
+      "targetId": "mem-MEMORY-security-notes",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-security-notes",
+      "targetId": "mem-MEMORY-patterns",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-feedback",
+      "targetId": "mem-MEMORY-project",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_deployment----",
+      "targetId": "mem-project_deployment-deployment-architecture",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_deployment-deployment-architecture",
+      "targetId": "mem-project_deployment-railway-backend-startup-flow",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_deployment-railway-backend-startup-flow",
+      "targetId": "mem-project_deployment-database-folder-structure",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_deployment-database-folder-structure",
+      "targetId": "mem-project_deployment-demo-accounts--password--passw",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_deployment-demo-accounts--password--passw",
+      "targetId": "mem-project_deployment-staging-test-guide",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns----",
+      "targetId": "mem-project_design_patterns-design-system-overview",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-design-system-overview",
+      "targetId": "mem-project_design_patterns-typography",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-typography",
+      "targetId": "mem-project_design_patterns-color-tokens",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-color-tokens",
+      "targetId": "mem-project_design_patterns-layout---spacing",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-layout---spacing",
+      "targetId": "mem-project_design_patterns-card-pattern",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-card-pattern",
+      "targetId": "mem-project_design_patterns-stat-numbers",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-stat-numbers",
+      "targetId": "mem-project_design_patterns-page-header-banners",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-page-header-banners",
+      "targetId": "mem-project_design_patterns-animations",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-animations",
+      "targetId": "mem-project_design_patterns-buttons",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-buttons",
+      "targetId": "mem-project_design_patterns-side-drawer-pattern",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-side-drawer-pattern",
+      "targetId": "mem-project_design_patterns-charts--recharts-",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-charts--recharts-",
+      "targetId": "mem-project_design_patterns-forms",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-forms",
+      "targetId": "mem-project_design_patterns-internationalization",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_design_patterns-internationalization",
+      "targetId": "mem-project_design_patterns-avatar-initials",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_git_remotes----",
+      "targetId": "mem-project_git_remotes-repositories",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_git_remotes-repositories",
+      "targetId": "mem-project_git_remotes-ssh-key",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_git_remotes-ssh-key",
+      "targetId": "mem-project_git_remotes-how-to-push-changes",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope----",
+      "targetId": "mem-project_scope-hr-management-system---full-sc",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-hr-management-system---full-sc",
+      "targetId": "mem-project_scope-overview",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-overview",
+      "targetId": "mem-project_scope-technology-stack",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-technology-stack",
+      "targetId": "mem-project_scope-roles",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-roles",
+      "targetId": "mem-project_scope-feature-scope",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-feature-scope",
+      "targetId": "mem-project_scope-milestones---payment",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-milestones---payment",
+      "targetId": "mem-project_scope-final-delivery---handover",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-final-delivery---handover",
+      "targetId": "mem-project_scope-post-delivery-maintenance",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_scope-post-delivery-maintenance",
+      "targetId": "mem-project_scope-key-rule",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_technical_state----",
+      "targetId": "mem-project_technical_state-phase-2-status--complete",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-project_stickfind_ui----",
+      "targetId": "mem-project_stickfind_ui-twilio-call-masking---sms-prox",
+      "type": "temporal",
+      "weight": 0.5
+    },
+    {
+      "sourceId": "mem-MEMORY-db-roles",
+      "targetId": "mem-MEMORY-lw-group-env-vars--all-optiona",
+      "type": "similar",
+      "weight": 0.8421052631578947
+    },
+    {
+      "sourceId": "mem-project-context-three-registration-types",
+      "targetId": "mem-project-context-stripe-price-id---seat-mapping",
+      "type": "similar",
+      "weight": 0.4411764705882353
+    },
+    {
+      "sourceId": "mem-project-context-roles--rbac-",
+      "targetId": "mem-project-context-four-dashboards",
+      "type": "similar",
+      "weight": 0.4589041095890411
+    },
+    {
+      "sourceId": "mem-project_design_patterns-card-pattern",
+      "targetId": "mem-project_design_patterns-charts--recharts-",
+      "type": "similar",
+      "weight": 0.38073394495412843
+    },
+    {
+      "sourceId": "mem-project_git_remotes-repositories",
+      "targetId": "mem-project_git_remotes-how-to-push-changes",
+      "type": "similar",
+      "weight": 0.3153846153846154
+    },
+    {
+      "sourceId": "mem-project_scope-feature-scope",
+      "targetId": "mem-project_scope-milestones---payment",
+      "type": "similar",
+      "weight": 0.3046594982078853
+    }
+  ],
+  "pageRanks": {
+    "mem-MEMORY-identity": 0.0026107818977247755,
+    "mem-MEMORY-phase-status": 0.0048299447198821115,
+    "mem-MEMORY-phase-2a-success-criteria": 0.00671623849213979,
+    "mem-MEMORY-planned-integrations--not-yet-": 0.008319593762228315,
+    "mem-MEMORY-business-model": 0.009682453809941894,
+    "mem-MEMORY-connector-url---auth": 0.01084090255505655,
+    "mem-MEMORY-oauth-notes": 0.011825604423260324,
+    "mem-MEMORY-contact": 0.01266260553836575,
+    "mem-MEMORY-key-files": 0.017479499547035857,
+    "mem-MEMORY-design-system--light-theme---j": 0.010039584907165356,
+    "mem-MEMORY-frontend-architecture--phase-2": 0.011144423681458966,
+    "mem-project-context-jigsaw-iq---full-project-conte": 0.0026107818977247755,
+    "mem-project-context-business-model": 0.0048299447198821115,
+    "mem-project-context-phase-budget---scope": 0.00671623849213979,
+    "mem-project-context-phase-2a-open-questions--for-a": 0.008319593762228315,
+    "mem-project-context-phase-2b-scope--future-": 0.009682453809941894,
+    "mem-project-context-integrations-by-phase": 0.01084090255505655,
+    "mem-project-context-mcp-protocol-format--json-rpc-": 0.011825604423260324,
+    "mem-project-context-oauth-implementation-notes": 0.01266260553836575,
+    "mem-project-context-multi-tenant-request-flow": 0.013374042952620843,
+    "mem-project-context-connector-url-format": 0.013978738874259733,
+    "mem-project-context-database-notes": 0.014492687325233719,
+    "mem-project-context-deployment": 0.01492949095112978,
+    "mem-project-context-4-week-timeline": 0.015300683848493021,
+    "mem-project-context-success-criteria--phase-2a-don": 0.015616211867961234,
+    "mem-MEMORY-memory-index": 0.0026107818977247755,
+    "mem-feedback_no_superpowers----": 0.0026107818977247755,
+    "mem-MEMORY-project--beyond-the-curriculum": 0.0026107818977247755,
+    "mem-MEMORY-learnworlds-sso--session-7-": 0.0048299447198821115,
+    "mem-MEMORY-ui-design-status--completed-se": 0.00671623849213979,
+    "mem-MEMORY-subscription-expiry-logic--com": 0.008319593762228315,
+    "mem-MEMORY-account-creation---password-fl": 0.009682453809941894,
+    "mem-MEMORY-resource-library--completed-se": 0.01084090255505655,
+    "mem-MEMORY-homeschool-module-fixes--sessi": 0.011825604423260324,
+    "mem-MEMORY-super-admin-manual-users---wel": 0.01266260553836575,
+    "mem-MEMORY-revoked-manual-user-login---da": 0.013374042952620843,
+    "mem-MEMORY-dual-role---individual-org-con": 0.013978738874259733,
+    "mem-MEMORY-bug-fixes--session-4-": 0.014492687325233719,
+    "mem-project-context-overview": 0.0026107818977247755,
+    "mem-project-context-tech-stack": 0.0048299447198821115,
+    "mem-project-context-what-s-already-built": 0.00671623849213979,
+    "mem-project-context-three-registration-types": 0.008319593762228315,
+    "mem-project-context-database-schema": 0.006146617853833336,
+    "mem-project-context-roles--rbac-": 0.00783542363746933,
+    "mem-project-context-seat-management": 0.005940851677712416,
+    "mem-project-context-stripe-webhook-events": 0.007660522185089572,
+    "mem-project-context-stripe-price-id---seat-mapping": 0.012658079392819137,
+    "mem-project-context-learnworlds-api-v2": 0.013370186156030448,
+    "mem-project-context-four-dashboards": 0.017305552587642367,
+    "mem-project-context-free-trial-logic": 0.017320558753178332,
+    "mem-project-context-resource-library-access": 0.017333283427818893,
+    "mem-project-context-frontend-ux-fixes-needed": 0.017344072090554618,
+    "mem-project-context-milestones": 0.01735316118527448,
+    "mem-project-context-out-of-scope": 0.017360877408438596,
+    "mem-project-context-access-needed": 0.01736740724773147,
+    "mem-MEMORY-project-overview": 0.0026107818977247755,
+    "mem-MEMORY-stack": 0.0048299447198821115,
+    "mem-MEMORY-learnworlds-api": 0.010039584907165356,
+    "mem-MEMORY-db-roles": 0.011144423681458966,
+    "mem-MEMORY-stripe-webhook-flow": 0.007347150507886837,
+    "mem-MEMORY-lw-group-env-vars--all-optiona": 0.013592198026113058,
+    "mem-MEMORY-security-notes": 0.01416409610744186,
+    "mem-MEMORY-patterns": 0.014650185465967974,
+    "mem-MEMORY-feedback": 0.0026107818977247755,
+    "mem-MEMORY-project": 0.0048299447198821115,
+    "mem-feedback_use_custom_pickers----": 0.0026107818977247755,
+    "mem-project_deployment----": 0.0026107818977247755,
+    "mem-project_deployment-deployment-architecture": 0.0048299447198821115,
+    "mem-project_deployment-railway-backend-startup-flow": 0.00671623849213979,
+    "mem-project_deployment-database-folder-structure": 0.008319593762228315,
+    "mem-project_deployment-demo-accounts--password--passw": 0.009682453809941894,
+    "mem-project_deployment-staging-test-guide": 0.01084090255505655,
+    "mem-project_design_patterns----": 0.0026107818977247755,
+    "mem-project_design_patterns-design-system-overview": 0.0048299447198821115,
+    "mem-project_design_patterns-typography": 0.00671623849213979,
+    "mem-project_design_patterns-color-tokens": 0.008319593762228315,
+    "mem-project_design_patterns-layout---spacing": 0.009682453809941894,
+    "mem-project_design_patterns-card-pattern": 0.01084090255505655,
+    "mem-project_design_patterns-stat-numbers": 0.007218193160492549,
+    "mem-project_design_patterns-page-header-banners": 0.008746275129123932,
+    "mem-project_design_patterns-animations": 0.010045140722380316,
+    "mem-project_design_patterns-buttons": 0.011149166318244023,
+    "mem-project_design_patterns-side-drawer-pattern": 0.012087570567587805,
+    "mem-project_design_patterns-charts--recharts-": 0.017492608015860937,
+    "mem-project_design_patterns-forms": 0.01747947454511849,
+    "mem-project_design_patterns-internationalization": 0.017468310933404018,
+    "mem-project_design_patterns-avatar-initials": 0.01745875482135886,
+    "mem-project_git_remotes----": 0.0026107818977247755,
+    "mem-project_git_remotes-repositories": 0.0048299447198821115,
+    "mem-project_git_remotes-ssh-key": 0.004663510194932283,
+    "mem-project_git_remotes-how-to-push-changes": 0.00862749753826272,
+    "mem-project_scope----": 0.0026107818977247755,
+    "mem-project_scope-hr-management-system---full-sc": 0.0048299447198821115,
+    "mem-project_scope-overview": 0.00671623849213979,
+    "mem-project_scope-technology-stack": 0.008319593762228315,
+    "mem-project_scope-roles": 0.009682453809941894,
+    "mem-project_scope-feature-scope": 0.01084090255505655,
+    "mem-project_scope-milestones---payment": 0.011825604423260324,
+    "mem-project_scope-final-delivery---handover": 0.01266260553836575,
+    "mem-project_scope-post-delivery-maintenance": 0.013374042952620843,
+    "mem-project_scope-key-rule": 0.013978738874259733,
+    "mem-project_technical_state----": 0.0026107818977247755,
+    "mem-project_technical_state-phase-2-status--complete": 0.0048299447198821115,
+    "mem-project_stickfind_ui----": 0.0026107818977247755,
+    "mem-project_stickfind_ui-twilio-call-masking---sms-prox": 0.0048299447198821115,
+    "insight-1774344984435-5cvo": 0.0026107818977247755
+  }
+}
