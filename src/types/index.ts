@@ -491,6 +491,22 @@ export interface NoticeRecipients {
   };
 }
 
+/**
+ * One tax rate as it exists in the Stripe dashboard.
+ *
+ * Listed so the operator picks a rate instead of copying a `txr_…` id between
+ * two browser tabs. Archived rates are included and shown as unselectable —
+ * an empty list explains nothing, a greyed-out entry explains itself.
+ */
+export interface StripeTaxRateOption {
+  id: string;
+  percentage: number;
+  inclusive: boolean;
+  active: boolean;
+  displayName: string | null;
+  jurisdiction: string | null;
+}
+
 /** Where a failed-payment warning went, and whether it arrived. */
 export interface BillingNoticeDelivery {
   emailTo: string | null;

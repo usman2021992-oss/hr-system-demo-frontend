@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MailCheck, MailX, MailWarning, Bell } from 'lucide-react';
 import type { BillingNoticeDelivery, BillingNoticeStatus } from '../../types';
+import { SmtpErrorNotice } from '../email/SmtpErrorNotice';
 
 /**
  * Who was warned about a failed payment, and whether the warning arrived.
@@ -171,12 +172,25 @@ export const NoticeDeliveryDetail: React.FC<{ notice?: BillingNoticeDelivery | n
         </div>
       )}
 
-      {/* Shown verbatim: an SMTP rejection reason is the whole diagnostic, and
-          paraphrasing it would cost the person reading it the answer. */}
+      {/* Explained, not quoted. An SMTP rejection is precise and unreadable;
+          the panel says what it means and what to do, and still shows the
+          server's own words underneath for whoever fixes the mailbox. */}
       {notice.emailError && (
-        <div style={{ ...row, color: '#dc2626' }}>
-          <span style={{ color: 'var(--text-muted)' }}>{t('billing.noticeError', 'Errore')}</span>
-          <span style={{ textAlign: 'right', wordBreak: 'break-word' }}>{notice.emailError}</span>
+        <div style={{ marginTop: 8 }}>
+          <SmtpErrorNotice error={notice.emailError} />
+        </div>
+      )}
+
+      {/* Which mailbox carried it. Only interesting when it was not the
+          platform's own, because that is the case worth correcting. */}
+      {notice.transport === 'company' && (
+        <div style={row}>
+          <span style={{ color: 'var(--text-muted)' }}>
+            {t('billing.noticeTransport', 'Inviata tramite')}
+          </span>
+          <span style={{ textAlign: 'right' }}>
+            {t('billing.noticeTransportCompany', 'SMTP dell’azienda (casella piattaforma non configurata)')}
+          </span>
         </div>
       )}
 
