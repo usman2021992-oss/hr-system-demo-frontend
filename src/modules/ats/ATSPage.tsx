@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
+  Archive,
+  ArchiveRestore,
   ArrowRight,
   BadgeCheck,
   Bookmark,
+  BookmarkCheck,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -86,6 +89,27 @@ import {
   InterviewType,
 } from '../../api/ats';
 import { parseCandidateProfile, serializeCandidateProfile, buildCandidateProfile, type CandidateApplicationProfile } from './candidateProfile';
+import { sanitizeDescriptionHtml, looksLikeOfficeMarkup } from './jobDescriptionSanitizer';
+import {
+  POOL_TAG_PREFIX,
+  SAVED_TAG,
+  ARCHIVED_TAG,
+  isSaved,
+  isArchived,
+  withPoolTag,
+  visibleOnBoard,
+  savedCandidates,
+  archivedCandidates,
+  type PoolView,
+} from './candidatePools';
+import {
+  REJECTION_REASON_CODES,
+  REJECTION_REASON_LABEL_KEYS,
+  REJECTION_REASON_FALLBACKS,
+  parseRejectionReason,
+  serializeRejectionReason,
+  type RejectionReasonCode,
+} from './rejectionReasons';
 import DocumentPreviewModal from './DocumentPreviewModal';
 import InterviewsPanel from './InterviewsPanel';
 import CalendarPanel from './CalendarPanel';
@@ -497,6 +521,28 @@ function runIndeedComplianceSuite(data: any): CheckResult[] {
       fix: "Break the description into sections using paragraph tags or bullet lists. Add headings like 'Responsibilities', 'Requirements', 'What we offer'.",
       valueChecked: /(<ul>|<ol>|<li>|<p>|\n\n|<br)/i.test(data.description || '') ? 'HTML paragraphs/lists structured' : 'Plain text only'
     },
+    (() => {
+      // Every check above grades the feed string — what Indeed actually
+      // receives. This one is the exception: it looks at the stored row, purely
+      // to report editor bloat. It is a warning, never a failure, because a
+      // bloated row does not affect the published posting.
+      const stored = Number(data.descriptionStoredLength ?? 0);
+      const visible = Number(data.descriptionVisibleLength ?? 0);
+      const bloated = stored > 2000 && visible > 0 && stored > visible * 3;
+      return {
+        id: 'D10',
+        field: 'description',
+        name: 'Description Storage Efficiency',
+        rule: 'Stored description is mostly visible text, not editor markup.',
+        ok: !bloated,
+        warn: bloated,
+        problem: bloated
+          ? `The stored description is ${stored.toLocaleString()} characters for ${visible.toLocaleString()} characters of visible text — the rest is markup left by pasting from Word. The feed exports the clean version, so the posting on Indeed is unaffected.`
+          : undefined,
+        fix: "Open the job posting and save it again: the editor now strips Office markup on paste and on save, so re-saving rewrites the stored description in its clean form.",
+        valueChecked: stored > 0 ? `${stored.toLocaleString()} stored / ${visible.toLocaleString()} visible` : 'Not measured'
+      };
+    })(),
 
     // GROUP 3 - Location
     {
@@ -925,6 +971,58 @@ function formatFileSize(bytes: number | null | undefined): string {
   return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+// ─── Time in stage ────────────────────────────────────────────────────────────
+// last_stage_change is written on every status change and was already reaching
+// the frontend; it was only ever used to guess which stage a rejected candidate
+// came from. Surfacing it answers the actual question: who is stuck.
+
+/** Whole days since the candidate last changed stage. */
+function daysInStage(lastStageChange: string | null | undefined): number | null {
+  if (!lastStageChange) return null;
+  const parsed = new Date(lastStageChange);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Age bands for a candidate sitting in a stage. "new" reads as an arrival
+ * rather than a delay, so it gets a word instead of a number; everything after
+ * it counts days and warms up as the wait grows.
+ */
+export type StageAgeBand = 'new' | 'fresh' | 'aging' | 'stale';
+
+const STAGE_AGE_FRESH_UNTIL_DAYS = 3;  // 2-3 days: moving normally.
+const STAGE_AGE_STALE_FROM_DAYS = 15;  // 15+ days: overdue.
+
+function stageAgeBand(days: number): StageAgeBand {
+  if (days <= 1) return 'new';
+  if (days <= STAGE_AGE_FRESH_UNTIL_DAYS) return 'fresh';
+  if (days < STAGE_AGE_STALE_FROM_DAYS) return 'aging';
+  return 'stale';
+}
+
+const STAGE_AGE_TONE: Record<StageAgeBand, { fg: string; bg: string; border: string }> = {
+  new:   { fg: '#0369A1', bg: 'rgba(2,132,199,0.10)',  border: 'rgba(2,132,199,0.26)' },
+  fresh: { fg: '#15803D', bg: 'rgba(21,128,61,0.10)',  border: 'rgba(21,128,61,0.26)' },
+  aging: { fg: '#B45309', bg: 'rgba(245,158,11,0.13)', border: 'rgba(245,158,11,0.32)' },
+  stale: { fg: '#B91C1C', bg: 'rgba(220,38,38,0.11)',  border: 'rgba(220,38,38,0.30)' },
+};
+
+/**
+ * Everything needed to render the badge, or null in a terminal stage where
+ * "days since" is the age of a decision rather than a delay.
+ */
+function stageAge(
+  status: CandidateStatus,
+  lastStageChange: string | null | undefined,
+): { days: number; band: StageAgeBand; tone: { fg: string; bg: string; border: string } } | null {
+  if (status === 'hired' || status === 'rejected') return null;
+  const days = daysInStage(lastStageChange);
+  if (days === null || days < 0) return null;
+  const band = stageAgeBand(days);
+  return { days, band, tone: STAGE_AGE_TONE[band] };
+}
+
 function fmtRelativeTime(iso: string) {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return '-';
@@ -968,7 +1066,9 @@ function fmtRelativeTime(iso: string) {
 }
 
 const SYSTEM_CANDIDATE_TAGS = new Set(['public-careers', 'external', 'indeed']);
-const SYSTEM_CANDIDATE_TAG_PREFIXES = ['locale:'];
+// "pool:" carries the saved / archived flags, which have their own controls —
+// they must never appear in the editable user-tag list.
+const SYSTEM_CANDIDATE_TAG_PREFIXES = ['locale:', POOL_TAG_PREFIX];
 
 function isSystemCandidateTag(tag: string): boolean {
   const normalized = tag.trim().toLowerCase();
@@ -1478,7 +1578,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     const el = editorRef.current;
     if (!el) return;
     isInternalUpdate.current = true;
-    onChange(el.innerHTML);
+    // Paste is not the only way markup enters a contentEditable — dragging a
+    // selection from Word bypasses onPaste entirely — so clean on the way out.
+    // Only when something foreign is actually present: running the sanitiser on
+    // every keystroke would rewrite the value while the user is typing in it.
+    const raw = el.innerHTML;
+    onChange(looksLikeOfficeMarkup(raw) || raw.includes('<!--') ? sanitizeDescriptionHtml(raw) : raw);
+  };
+
+  // Content dropped into the editor arrives as raw HTML; route it through the
+  // same cleanup as a paste.
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const html = e.dataTransfer.getData('text/html');
+    if (!html) return;
+    e.preventDefault();
+    document.execCommand('insertHTML', false, sanitizeDescriptionHtml(html));
+    syncContent();
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1487,34 +1602,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     const plain = e.clipboardData.getData('text/plain');
 
     if (html) {
-      // Sanitise pasted HTML: keep only allowed tags, strip scripts/iframes
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-
-      // Remove disallowed elements
-      ['script', 'iframe', 'style', 'head', 'meta', 'link', 'object', 'embed'].forEach((tag) => {
-        tmp.querySelectorAll(tag).forEach((el) => el.remove());
-      });
-
-      // Strip all attributes except href on <a>
-      tmp.querySelectorAll('*').forEach((el) => {
-        const tag = el.tagName.toLowerCase();
-        const allowedAttrs = tag === 'a' ? ['href'] : [];
-        Array.from(el.attributes).forEach((attr) => {
-          if (!allowedAttrs.includes(attr.name)) {
-            el.removeAttribute(attr.name);
-          }
-        });
-      });
-
-      // Map headings / divs / spans to clean block elements
-      tmp.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((el) => {
-        const p = document.createElement('p');
-        p.innerHTML = el.innerHTML;
-        el.replaceWith(p);
-      });
-
-      document.execCommand('insertHTML', false, tmp.innerHTML);
+      // Reduce to the allowed tag set. This drops comment nodes, which is what
+      // removes Word's <!--[if gte mso 9]><xml>…</xml><![endif]--> block — the
+      // previous handler only looked at elements, so that markup got through.
+      document.execCommand('insertHTML', false, sanitizeDescriptionHtml(html));
     } else if (plain) {
       // Convert plain text newlines to <br>
       const safeHtml = plain
@@ -1607,6 +1698,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
           suppressContentEditableWarning
           onInput={syncContent}
           onPaste={handlePaste}
+          onDrop={handleDrop}
           style={{
             minHeight,
             padding: '10px 12px',
@@ -4902,13 +4994,15 @@ interface CandidateModalProps {
   onAdvance: (status: CandidateStatus) => Promise<void>;
   onReject: (reason?: string) => Promise<void>;
   onDelete: () => Promise<void>;
+  /** Toggle the saved / archived pools. Persisted as system tags. */
+  onTogglePool: (tag: string, enabled: boolean) => Promise<void>;
   saving: boolean;
   companies?: Company[];
 }
 
 const CandidateModal: React.FC<CandidateModalProps> = ({
   candidate, jobs, employees, canEdit, canTag, canFeedback, interviewInviteEnabled, smtpConfigured,
-  onClose, onAdvance, onReject, onDelete, saving,
+  onClose, onAdvance, onReject, onDelete, onTogglePool, saving,
   companies = [],
 }) => {
   const { t, i18n } = useTranslation();
@@ -5053,9 +5147,26 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
   const [savingTags, setSavingTags] = useState(false);
   const { systemTags } = useMemo(() => splitCandidateTags(candidate.tags), [candidate.tags]);
 
-  // Rejection reason
+  // Saved / archived pools. Read straight off the candidate so the header
+  // reflects an update made from the list behind the modal.
+  const candidateIsSaved = isSaved(candidate);
+  const candidateIsArchived = isArchived(candidate);
+  const [poolSaving, setPoolSaving] = useState(false);
+
+  const handleTogglePool = async (tag: string, enabled: boolean) => {
+    setPoolSaving(true);
+    try {
+      await onTogglePool(tag, enabled);
+    } finally {
+      setPoolSaving(false);
+    }
+  };
+
+  // Rejection reason — a closed list, so reasons can be counted in a report.
+  // The free-text note survives only under "other".
   const [showRejectionModal, setShowRejectionModal] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionCode, setRejectionCode] = useState<RejectionReasonCode | ''>('');
+  const [rejectionNote, setRejectionNote] = useState('');
   const [savingRejection, setSavingRejection] = useState(false);
 
   const [screenerQuestions, setScreenerQuestions] = useState<ScreenerQuestion[]>([]);
@@ -5485,15 +5596,20 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
 
   // Rejection handler
   const handleRejectWithReason = async () => {
-    if (!rejectionReason.trim()) {
-      showToast(t('ats.rejectionReasonRequired', 'Please provide a rejection reason'), 'error');
+    if (!rejectionCode) {
+      showToast(t('ats.rejectionReasonRequired', 'Please select a rejection reason'), 'error');
+      return;
+    }
+    if (rejectionCode === 'other' && !rejectionNote.trim()) {
+      showToast(t('ats.rejectionNoteRequired', 'Please describe the reason'), 'error');
       return;
     }
     setSavingRejection(true);
     try {
-      await onReject(rejectionReason.trim());
+      await onReject(serializeRejectionReason(rejectionCode, rejectionNote));
       setShowRejectionModal(false);
-      setRejectionReason('');
+      setRejectionCode('');
+      setRejectionNote('');
       showToast(t('ats.candidateRejected', 'Candidate rejected'), 'success');
     } catch {
       showToast(t('ats.rejectionError', 'Failed to reject candidate'), 'error');
@@ -5680,13 +5796,60 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
           boxSizing: 'border-box',
           maxWidth: '100%',
         }}>
-          <button onClick={onClose} style={{
-            position: 'absolute', top: 16, right: 16,
-            background: 'rgba(0,0,0,0.06)', border: 'none', cursor: 'pointer',
-            color: 'var(--text-muted)', fontSize: 18, lineHeight: 1,
-            width: 28, height: 28, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>×</button>
+          {/* Pool controls + close. Saved keeps the candidate on the board;
+              archived takes them off it. Both are reversible from here. */}
+          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {canTag && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { void handleTogglePool(SAVED_TAG, !candidateIsSaved); }}
+                  disabled={poolSaving}
+                  aria-pressed={candidateIsSaved}
+                  title={candidateIsSaved
+                    ? t('ats.poolRemoveFromSaved', 'Remove from saved')
+                    : t('ats.poolAddToSaved', 'Save for a future position')}
+                  style={{
+                    background: candidateIsSaved ? 'rgba(201,151,58,0.16)' : 'rgba(0,0,0,0.06)',
+                    border: candidateIsSaved ? '1px solid rgba(201,151,58,0.45)' : '1px solid transparent',
+                    cursor: poolSaving ? 'wait' : 'pointer',
+                    color: candidateIsSaved ? '#B07D19' : 'var(--text-muted)',
+                    width: 28, height: 28, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: poolSaving ? 0.6 : 1, transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  {candidateIsSaved ? <BookmarkCheck size={14} strokeWidth={2.4} /> : <Bookmark size={14} strokeWidth={2.2} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void handleTogglePool(ARCHIVED_TAG, !candidateIsArchived); }}
+                  disabled={poolSaving}
+                  aria-pressed={candidateIsArchived}
+                  title={candidateIsArchived
+                    ? t('ats.poolRestore', 'Restore to the board')
+                    : t('ats.poolArchive', 'Archive (hide from the board)')}
+                  style={{
+                    background: candidateIsArchived ? 'rgba(100,116,139,0.18)' : 'rgba(0,0,0,0.06)',
+                    border: candidateIsArchived ? '1px solid rgba(100,116,139,0.45)' : '1px solid transparent',
+                    cursor: poolSaving ? 'wait' : 'pointer',
+                    color: candidateIsArchived ? '#475569' : 'var(--text-muted)',
+                    width: 28, height: 28, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: poolSaving ? 0.6 : 1, transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  {candidateIsArchived ? <ArchiveRestore size={14} strokeWidth={2.2} /> : <Archive size={14} strokeWidth={2.2} />}
+                </button>
+              </>
+            )}
+            <button onClick={onClose} style={{
+              background: 'rgba(0,0,0,0.06)', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', fontSize: 18, lineHeight: 1,
+              width: 28, height: 28, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>×</button>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingRight: 36 }}>
             {/* Avatar */}
@@ -5712,6 +5875,26 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                 }}>
                   {t(`ats.stage_${candidate.status}`)}
                 </span>
+                {candidateIsSaved && (
+                  <span style={{
+                    background: 'rgba(201,151,58,0.14)', color: '#B07D19',
+                    border: '1px solid rgba(201,151,58,0.35)', borderRadius: 99,
+                    padding: '2px 9px', fontSize: 11, fontWeight: 600,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                  }}>
+                    <BookmarkCheck size={11} strokeWidth={2.6} /> {t('ats.poolSaved', 'Saved')}
+                  </span>
+                )}
+                {candidateIsArchived && (
+                  <span style={{
+                    background: 'rgba(100,116,139,0.14)', color: '#475569',
+                    border: '1px solid rgba(100,116,139,0.35)', borderRadius: 99,
+                    padding: '2px 9px', fontSize: 11, fontWeight: 600,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                  }}>
+                    <Archive size={11} strokeWidth={2.4} /> {t('ats.poolArchived', 'Archived')}
+                  </span>
+                )}
                 {jobTitle && (
                   <span style={{
                     background: 'var(--surface)', color: 'var(--text-secondary)',
@@ -6109,8 +6292,27 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
 
           {/* Stage pipeline visual */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-              Pipeline
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                Pipeline
+              </div>
+              {(() => {
+                const age = stageAge(candidate.status, candidate.lastStageChange);
+                if (!age) return null;
+                return (
+                  <div
+                    title={fmtDateTime(candidate.lastStageChange)}
+                    style={{
+                      fontSize: 9.5, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                      color: age.tone.fg, background: age.tone.bg, border: `1px solid ${age.tone.border}`,
+                    }}
+                  >
+                    {age.band === 'new'
+                      ? t('ats.stageAgeNew', 'New')
+                      : t('ats.daysInStage', '{{count}} days in this stage', { count: age.days })}
+                  </div>
+                );
+              })()}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
               {(() => {
@@ -6131,7 +6333,7 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                   } else if (candidate.lastStageChange) {
                     // Try to infer from lastStageChange timestamp
                     // This is a simple heuristic - in a real system you'd track stage history
-                    const daysSinceLastChange = Math.floor((Date.now() - new Date(candidate.lastStageChange).getTime()) / (1000 * 60 * 60 * 24));
+                    const daysSinceLastChange = daysInStage(candidate.lastStageChange) ?? 0;
                     if (daysSinceLastChange > 7) {
                       lastStageBeforeRejection = 'review';
                     }
@@ -6212,9 +6414,27 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
               <div style={{ fontSize: 10, fontWeight: 700, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                 {t('ats.rejectionReason', 'Rejection reason')}
               </div>
-              <div style={{ fontSize: 12, color: '#7F1D1D', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                {candidate.rejectionReason}
-              </div>
+              {/* Stored values may be a code, "other:<note>", or free text
+                  written before the closed list existed. All three read the
+                  same way here. */}
+              {(() => {
+                const parsed = parseRejectionReason(candidate.rejectionReason);
+                const label = parsed.code
+                  ? t(REJECTION_REASON_LABEL_KEYS[parsed.code], REJECTION_REASON_FALLBACKS[parsed.code])
+                  : null;
+                return (
+                  <>
+                    <div style={{ fontSize: 12, color: '#7F1D1D', lineHeight: 1.5, fontWeight: label ? 600 : 400, whiteSpace: 'pre-wrap' }}>
+                      {label ?? parsed.note}
+                    </div>
+                    {parsed.note && label && (
+                      <div style={{ fontSize: 11.5, color: '#9F1239', lineHeight: 1.5, marginTop: 3, whiteSpace: 'pre-wrap', fontStyle: parsed.legacy ? 'italic' : 'normal' }}>
+                        {parsed.note}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -7188,13 +7408,11 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
               color: 'var(--text-secondary)',
               marginBottom: 16,
             }}>
-              {t('ats.rejectionReasonPrompt', 'Please provide a reason for rejecting this candidate:')}
+              {t('ats.rejectionReasonPrompt', 'Select a reason for rejecting this candidate:')}
             </p>
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder={t('ats.rejectionReasonPlaceholder', 'e.g., Not enough experience, Skills mismatch, etc.')}
-              rows={4}
+            <select
+              value={rejectionCode}
+              onChange={(e) => setRejectionCode(e.target.value as RejectionReasonCode | '')}
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
@@ -7204,16 +7422,48 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                 border: '1px solid var(--border)',
                 outline: 'none',
                 fontFamily: 'inherit',
-                resize: 'vertical',
-                marginBottom: 16,
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                marginBottom: rejectionCode === 'other' ? 10 : 16,
               }}
-            />
+            >
+              <option value="">{t('ats.rejectionReasonSelect', 'Select a reason…')}</option>
+              {REJECTION_REASON_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {t(REJECTION_REASON_LABEL_KEYS[code], REJECTION_REASON_FALLBACKS[code])}
+                </option>
+              ))}
+            </select>
+
+            {/* "Other" is the only reason that keeps a free-text note. */}
+            {rejectionCode === 'other' && (
+              <textarea
+                value={rejectionNote}
+                onChange={(e) => setRejectionNote(e.target.value)}
+                placeholder={t('ats.rejectionNotePlaceholder', 'Describe the reason')}
+                rows={3}
+                autoFocus
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '10px 12px',
+                  fontSize: 13,
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  marginBottom: 16,
+                }}
+              />
+            )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Button
                 variant="secondary"
                 onClick={() => {
                   setShowRejectionModal(false);
-                  setRejectionReason('');
+                  setRejectionCode('');
+                  setRejectionNote('');
                 }}
                 disabled={savingRejection}
               >
@@ -7223,7 +7473,7 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                 variant="danger"
                 onClick={handleRejectWithReason}
                 loading={savingRejection}
-                disabled={!rejectionReason.trim()}
+                disabled={!rejectionCode || (rejectionCode === 'other' && !rejectionNote.trim())}
               >
                 {t('ats.confirmReject', 'Confirm Rejection')}
               </Button>
@@ -10135,6 +10385,206 @@ const IndeedPanel: React.FC<{ canEdit: boolean; companyId?: number }> = ({ canEd
   );
 };
 
+// ─── Candidate pool list ──────────────────────────────────────────────────────
+// The Saved and Archived views. Both are lists rather than boards: nobody works
+// a pipeline here, they look someone up and either open them or put them back.
+
+const CandidatePoolList: React.FC<{
+  view: Exclude<PoolView, 'board'>;
+  candidates: Candidate[];
+  jobs: JobPosting[];
+  canTag: boolean;
+  onOpen: (candidate: Candidate) => void;
+  onTogglePool: (candidateId: number, tag: string, enabled: boolean) => Promise<void>;
+}> = ({ view, candidates, jobs, canTag, onOpen, onTogglePool }) => {
+  const { t } = useTranslation();
+  const { isMobile } = useBreakpoint();
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return candidates;
+    return candidates.filter((c) => {
+      const job = jobs.find((j) => j.id === c.jobPostingId)?.title ?? '';
+      return `${c.fullName} ${c.email ?? ''} ${job} ${(c.tags ?? []).join(' ')}`.toLowerCase().includes(q);
+    });
+  }, [candidates, jobs, search]);
+
+  const toggle = async (candidateId: number, tag: string, enabled: boolean) => {
+    setBusyId(candidateId);
+    try {
+      await onTogglePool(candidateId, tag, enabled);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (candidates.length === 0) {
+    return (
+      <div style={{
+        border: '1px dashed var(--border)', borderRadius: 14, padding: '38px 20px',
+        textAlign: 'center', color: 'var(--text-muted)', background: 'var(--background)',
+      }}>
+        <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
+          {view === 'saved' ? <Bookmark size={26} strokeWidth={1.6} /> : <Archive size={26} strokeWidth={1.6} />}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>
+          {view === 'saved'
+            ? t('ats.poolSavedEmptyTitle', 'No saved candidates yet')
+            : t('ats.poolArchivedEmptyTitle', 'Nothing archived')}
+        </div>
+        <div style={{ fontSize: 12.5, lineHeight: 1.6, maxWidth: 460, margin: '0 auto' }}>
+          {view === 'saved'
+            ? t('ats.poolSavedEmptyHint', 'Open a candidate and use the bookmark icon to keep an interesting profile for a future position. Saved candidates stay on the board.')
+            : t('ats.poolArchivedEmptyHint', 'Open a candidate and use the archive icon to take them off the board without losing the record. They can be restored at any time.')}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 14, background: 'var(--surface)', overflow: 'hidden' }}>
+      <div style={{
+        padding: '12px 14px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        background: 'var(--background)',
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {view === 'saved' ? <BookmarkCheck size={14} strokeWidth={2.3} /> : <Archive size={14} strokeWidth={2.1} />}
+          {view === 'saved'
+            ? t('ats.poolSavedTitle', 'Saved candidates')
+            : t('ats.poolArchivedTitle', 'Archived candidates')}
+        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('ats.poolSearch', 'Search name, email or position…')}
+          style={{
+            marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 280,
+            padding: '6px 10px', fontSize: 12.5, borderRadius: 8,
+            border: '1px solid var(--border)', outline: 'none',
+            background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit',
+          }}
+        />
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)' }}>
+              {[
+                t('ats.poolColCandidate', 'Candidate'),
+                t('ats.poolColPosition', 'Position'),
+                t('ats.poolColStage', 'Stage'),
+                t('ats.poolColUpdated', 'Last change'),
+                '',
+              ].map((label, idx) => (
+                <th key={idx} style={{
+                  textAlign: idx === 4 ? 'right' : 'left', padding: '9px 12px',
+                  fontWeight: 700, color: 'var(--text-muted)', fontSize: 10.5,
+                  textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap',
+                }}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c) => {
+              const job = jobs.find((j) => j.id === c.jobPostingId)?.title;
+              const sc = STAGE_COLOR[c.status];
+              const busy = busyId === c.id;
+              return (
+                <tr
+                  key={c.id}
+                  style={{ borderBottom: '1px solid var(--border-light, var(--border))', cursor: 'pointer' }}
+                  onClick={() => onOpen(c)}
+                >
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                        background: sc, color: '#fff', fontSize: 10, fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-display)',
+                      }}>
+                        {initials(c.fullName)}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          {c.fullName}
+                          {/* A candidate can be in both pools: archived for this
+                              position, saved for the next one. */}
+                          {view === 'archived' && isSaved(c) && (
+                            <BookmarkCheck size={12} strokeWidth={2.4} color="#B07D19" />
+                          )}
+                          {view === 'saved' && isArchived(c) && (
+                            <Archive size={12} strokeWidth={2.2} color="#64748B" />
+                          )}
+                        </div>
+                        {c.email && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {c.email}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                    {job ?? <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{
+                      background: STAGE_BG[c.status], color: sc, border: `1px solid ${sc}30`,
+                      borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+                    }}>
+                      {t(`ats.stage_${c.status}`)}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }} title={fmtDateTime(c.lastStageChange)}>
+                    {fmtRelativeTime(c.lastStageChange)}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    {canTag && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void toggle(c.id, view === 'saved' ? SAVED_TAG : ARCHIVED_TAG, false);
+                        }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '4px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 600,
+                          border: '1px solid var(--border)', background: 'var(--surface)',
+                          color: 'var(--text-secondary)', cursor: busy ? 'wait' : 'pointer',
+                          opacity: busy ? 0.6 : 1,
+                        }}
+                      >
+                        {view === 'saved'
+                          ? <>{<Bookmark size={12} strokeWidth={2.2} />} {t('ats.poolRemove', 'Remove')}</>
+                          : <>{<ArchiveRestore size={12} strokeWidth={2.2} />} {t('ats.poolRestoreShort', 'Restore')}</>}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ padding: '26px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12.5 }}>
+                  {t('ats.poolNoMatch', 'No candidate matches this search.')}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 // ─── Kanban Panel ─────────────────────────────────────────────────────────────
 
 const KanbanPanel: React.FC<{ 
@@ -10159,6 +10609,8 @@ const KanbanPanel: React.FC<{
   const [filterJob, setFilterJob] = useState<string>('');
   const [draggedCandidateId, setDraggedCandidateId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<CandidateStatus | null>(null);
+  // Board is the pipeline; Saved and Archived are the two pools.
+  const [poolView, setPoolView] = useState<PoolView>('board');
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -10342,10 +10794,49 @@ const KanbanPanel: React.FC<{
     };
   }, [socket, filterJob, user?.role, user?.storeId, effectiveCompanyId]);
 
+  // Archived candidates come off the board and live in their own pool. Saved
+  // ones stay on the board and are additionally listed in the Saved pool.
+  const boardCandidates = useMemo(() => visibleOnBoard(candidates), [candidates]);
+  const savedList = useMemo(
+    () => savedCandidates(candidates).sort((a, b) => new Date(b.lastStageChange).getTime() - new Date(a.lastStageChange).getTime()),
+    [candidates],
+  );
+  const archivedList = useMemo(
+    () => archivedCandidates(candidates).sort((a, b) => new Date(b.lastStageChange).getTime() - new Date(a.lastStageChange).getTime()),
+    [candidates],
+  );
+
   const byStage = (stage: CandidateStatus) =>
-    candidates.filter((c) => c.status === stage).sort((a, b) =>
+    boardCandidates.filter((c) => c.status === stage).sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
+  /**
+   * Persisted through the existing tags endpoint. The candidate list and the
+   * open modal are both updated from the server's response, so the board, the
+   * pools and the modal header can never drift apart.
+   */
+  const handleTogglePool = async (candidateId: number, tag: string, enabled: boolean) => {
+    const target = candidates.find((c) => c.id === candidateId);
+    if (!target) return;
+    try {
+      const updated = await updateCandidateTags(candidateId, withPoolTag(target.tags, tag, enabled));
+      setCandidates((prev) => prev.map((c) => (c.id === candidateId ? updated : c)));
+      setSelected((prev) => (prev && prev.id === candidateId ? updated : prev));
+      const messages: Record<string, [string, string]> = {
+        [SAVED_TAG]: ['ats.poolSavedToast', 'Saved for future positions'],
+        [ARCHIVED_TAG]: ['ats.poolArchivedToast', 'Moved to the archive'],
+      };
+      const removed: Record<string, [string, string]> = {
+        [SAVED_TAG]: ['ats.poolUnsavedToast', 'Removed from saved'],
+        [ARCHIVED_TAG]: ['ats.poolRestoredToast', 'Restored to the board'],
+      };
+      const [key, fallback] = (enabled ? messages : removed)[tag] ?? ['ats.tagsSaved', 'Updated'];
+      showToast(t(key, fallback), 'success');
+    } catch {
+      showToast(t('ats.poolError', 'Could not update the candidate'), 'error');
+    }
+  };
 
   const buildHiringDraft = (candidate: Candidate): HiringEmployeeDraft => {
     const job = candidate.jobPostingId ? jobs.find((item) => item.id === candidate.jobPostingId) : null;
@@ -10819,8 +11310,50 @@ const KanbanPanel: React.FC<{
           />
         </div>
 
+        {/* Board / Saved / Archived */}
+        <div style={{
+          display: 'inline-flex', padding: 3, gap: 2, borderRadius: 10,
+          background: 'var(--background)', border: '1px solid var(--border)',
+          width: isMobile ? '100%' : 'auto',
+        }}>
+          {([
+            { key: 'board' as const, label: t('ats.poolViewBoard', 'Board'), icon: null, count: boardCandidates.length },
+            { key: 'saved' as const, label: t('ats.poolViewSaved', 'Saved'), icon: <BookmarkCheck size={12} strokeWidth={2.4} />, count: savedList.length },
+            { key: 'archived' as const, label: t('ats.poolViewArchived', 'Archived'), icon: <Archive size={12} strokeWidth={2.2} />, count: archivedList.length },
+          ]).map((tab) => {
+            const active = poolView === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setPoolView(tab.key)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  padding: '5px 11px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: active ? 700 : 600,
+                  background: active ? 'var(--surface)' : 'transparent',
+                  color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: active ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
+                  flex: isMobile ? 1 : undefined,
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '0 5px', borderRadius: 99,
+                  background: active ? 'var(--background)' : 'transparent',
+                  color: 'var(--text-muted)', border: '1px solid var(--border)',
+                }}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Pipeline summary */}
-        {!loading && (
+        {!loading && poolView === 'board' && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {STAGES.filter((s) => byStage(s).length > 0).map((s) => (
               <span key={s} style={{
@@ -10849,8 +11382,21 @@ const KanbanPanel: React.FC<{
         )}
       </div>
 
+      {/* Saved / Archived pools. Same data as the board, listed rather than
+          columned — these are reference lists, not a pipeline to work. */}
+      {!loading && poolView !== 'board' && (
+        <CandidatePoolList
+          view={poolView}
+          candidates={poolView === 'saved' ? savedList : archivedList}
+          jobs={jobs}
+          canTag={canTag}
+          onOpen={openCandidateModal}
+          onTogglePool={handleTogglePool}
+        />
+      )}
+
       {/* Board */}
-      {loading ? (
+      {poolView === 'board' && (loading ? (
         <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, alignItems: 'flex-start' }}>
           {STAGES.map((s) => (
             <div key={s} style={{ minWidth: 240, flexShrink: 0, background: 'var(--background)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
@@ -11035,6 +11581,11 @@ const KanbanPanel: React.FC<{
                               display: 'flex', alignItems: 'center', gap: 6,
                             }}>
                               <span>{c.fullName}</span>
+                              {/* Saved candidates stay on the board; the mark is
+                                  how you tell them apart at a glance. */}
+                              {isSaved(c) && (
+                                <BookmarkCheck size={12} strokeWidth={2.5} color="#B07D19" />
+                              )}
                               {(() => {
                                 const profile = parseCandidateProfile(c.sourceRef);
                                 if (!profile.country) return null;
@@ -11062,8 +11613,32 @@ const KanbanPanel: React.FC<{
                                 );
                               })()}
                             </div>
-                            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 1 }} title={fmtDateTime(c.appliedAt ?? c.createdAt)}>
-                              {fmtRelativeTime(c.appliedAt ?? c.createdAt)}
+                            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 1, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                              <span title={fmtDateTime(c.appliedAt ?? c.createdAt)}>
+                                {fmtRelativeTime(c.appliedAt ?? c.createdAt)}
+                              </span>
+                              {/* Time in this stage: a word on arrival, then a
+                                  day count that warms up as the wait grows. */}
+                              {(() => {
+                                const age = stageAge(c.status, c.lastStageChange);
+                                if (!age) return null;
+                                return (
+                                  <span
+                                    title={t('ats.daysInStageTooltip', 'Days in current stage')}
+                                    style={{
+                                      fontSize: 8.5, fontWeight: 700, lineHeight: 1.55,
+                                      padding: '0 5px', borderRadius: 4,
+                                      color: age.tone.fg, background: age.tone.bg,
+                                      border: `1px solid ${age.tone.border}`,
+                                      whiteSpace: 'nowrap', letterSpacing: '0.02em',
+                                    }}
+                                  >
+                                    {age.band === 'new'
+                                      ? t('ats.stageAgeNew', 'New')
+                                      : t('ats.daysInStageShort', '{{count}}d in stage', { count: age.days })}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
 
@@ -11153,7 +11728,7 @@ const KanbanPanel: React.FC<{
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* Add Candidate Modal */}
       {showAddModal && (
@@ -11876,6 +12451,7 @@ const KanbanPanel: React.FC<{
           onAdvance={handleAdvance}
           onReject={handleReject}
           onDelete={handleDelete}
+          onTogglePool={(tag, enabled) => handleTogglePool(selected.id, tag, enabled)}
           saving={saving}
           companies={companies}
         />
