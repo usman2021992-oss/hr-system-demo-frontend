@@ -86,6 +86,15 @@ import {
   InterviewType,
 } from '../../api/ats';
 import { parseCandidateProfile, serializeCandidateProfile, buildCandidateProfile, type CandidateApplicationProfile } from './candidateProfile';
+import { sanitizeDescriptionHtml, looksLikeOfficeMarkup } from './jobDescriptionSanitizer';
+import {
+  REJECTION_REASON_CODES,
+  REJECTION_REASON_LABEL_KEYS,
+  REJECTION_REASON_FALLBACKS,
+  parseRejectionReason,
+  serializeRejectionReason,
+  type RejectionReasonCode,
+} from './rejectionReasons';
 import DocumentPreviewModal from './DocumentPreviewModal';
 import InterviewsPanel from './InterviewsPanel';
 import CalendarPanel from './CalendarPanel';
@@ -497,6 +506,28 @@ function runIndeedComplianceSuite(data: any): CheckResult[] {
       fix: "Break the description into sections using paragraph tags or bullet lists. Add headings like 'Responsibilities', 'Requirements', 'What we offer'.",
       valueChecked: /(<ul>|<ol>|<li>|<p>|\n\n|<br)/i.test(data.description || '') ? 'HTML paragraphs/lists structured' : 'Plain text only'
     },
+    (() => {
+      // Every check above grades the feed string — what Indeed actually
+      // receives. This one is the exception: it looks at the stored row, purely
+      // to report editor bloat. It is a warning, never a failure, because a
+      // bloated row does not affect the published posting.
+      const stored = Number(data.descriptionStoredLength ?? 0);
+      const visible = Number(data.descriptionVisibleLength ?? 0);
+      const bloated = stored > 2000 && visible > 0 && stored > visible * 3;
+      return {
+        id: 'D10',
+        field: 'description',
+        name: 'Description Storage Efficiency',
+        rule: 'Stored description is mostly visible text, not editor markup.',
+        ok: !bloated,
+        warn: bloated,
+        problem: bloated
+          ? `The stored description is ${stored.toLocaleString()} characters for ${visible.toLocaleString()} characters of visible text — the rest is markup left by pasting from Word. The feed exports the clean version, so the posting on Indeed is unaffected.`
+          : undefined,
+        fix: "Open the job posting and save it again: the editor now strips Office markup on paste and on save, so re-saving rewrites the stored description in its clean form.",
+        valueChecked: stored > 0 ? `${stored.toLocaleString()} stored / ${visible.toLocaleString()} visible` : 'Not measured'
+      };
+    })(),
 
     // GROUP 3 - Location
     {
@@ -923,6 +954,43 @@ function formatFileSize(bytes: number | null | undefined): string {
     unitIndex += 1;
   }
   return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+// ─── Time in stage ────────────────────────────────────────────────────────────
+// last_stage_change is written on every status change and was already reaching
+// the frontend; it was only ever used to guess which stage a rejected candidate
+// came from. Surfacing it answers the actual question: who is stuck.
+
+/** Whole days since the candidate last changed stage. */
+function daysInStage(lastStageChange: string | null | undefined): number | null {
+  if (!lastStageChange) return null;
+  const parsed = new Date(lastStageChange);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Below this, a candidate is simply being worked on and the badge would be
+ * noise on every card. Above it, the wait is worth showing.
+ */
+const STAGE_AGE_VISIBLE_AFTER_DAYS = 2;
+
+/** Matches candidateStallAmber / candidateStallRed in the reports module, so a
+ *  card and the "Candidato fermo" report row never disagree. */
+const STAGE_AGE_AMBER_DAYS = 7;
+const STAGE_AGE_RED_DAYS = 14;
+
+/**
+ * Colour for the badge, or null when it should not be shown at all — under the
+ * visibility threshold, or in a terminal stage where "days since" is the age of
+ * a decision, not a delay.
+ */
+function stageAgeTone(status: CandidateStatus, days: number | null): { fg: string; bg: string; border: string } | null {
+  if (days === null || days <= STAGE_AGE_VISIBLE_AFTER_DAYS) return null;
+  if (status === 'hired' || status === 'rejected') return null;
+  if (days >= STAGE_AGE_RED_DAYS) return { fg: '#B91C1C', bg: 'rgba(220,38,38,0.10)', border: 'rgba(220,38,38,0.28)' };
+  if (days >= STAGE_AGE_AMBER_DAYS) return { fg: '#B45309', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.30)' };
+  return { fg: '#64748B', bg: 'rgba(100,116,139,0.10)', border: 'rgba(100,116,139,0.22)' };
 }
 
 function fmtRelativeTime(iso: string) {
@@ -1478,7 +1546,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     const el = editorRef.current;
     if (!el) return;
     isInternalUpdate.current = true;
-    onChange(el.innerHTML);
+    // Paste is not the only way markup enters a contentEditable — dragging a
+    // selection from Word bypasses onPaste entirely — so clean on the way out.
+    // Only when something foreign is actually present: running the sanitiser on
+    // every keystroke would rewrite the value while the user is typing in it.
+    const raw = el.innerHTML;
+    onChange(looksLikeOfficeMarkup(raw) || raw.includes('<!--') ? sanitizeDescriptionHtml(raw) : raw);
+  };
+
+  // Content dropped into the editor arrives as raw HTML; route it through the
+  // same cleanup as a paste.
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const html = e.dataTransfer.getData('text/html');
+    if (!html) return;
+    e.preventDefault();
+    document.execCommand('insertHTML', false, sanitizeDescriptionHtml(html));
+    syncContent();
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1487,34 +1570,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     const plain = e.clipboardData.getData('text/plain');
 
     if (html) {
-      // Sanitise pasted HTML: keep only allowed tags, strip scripts/iframes
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-
-      // Remove disallowed elements
-      ['script', 'iframe', 'style', 'head', 'meta', 'link', 'object', 'embed'].forEach((tag) => {
-        tmp.querySelectorAll(tag).forEach((el) => el.remove());
-      });
-
-      // Strip all attributes except href on <a>
-      tmp.querySelectorAll('*').forEach((el) => {
-        const tag = el.tagName.toLowerCase();
-        const allowedAttrs = tag === 'a' ? ['href'] : [];
-        Array.from(el.attributes).forEach((attr) => {
-          if (!allowedAttrs.includes(attr.name)) {
-            el.removeAttribute(attr.name);
-          }
-        });
-      });
-
-      // Map headings / divs / spans to clean block elements
-      tmp.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((el) => {
-        const p = document.createElement('p');
-        p.innerHTML = el.innerHTML;
-        el.replaceWith(p);
-      });
-
-      document.execCommand('insertHTML', false, tmp.innerHTML);
+      // Reduce to the allowed tag set. This drops comment nodes, which is what
+      // removes Word's <!--[if gte mso 9]><xml>…</xml><![endif]--> block — the
+      // previous handler only looked at elements, so that markup got through.
+      document.execCommand('insertHTML', false, sanitizeDescriptionHtml(html));
     } else if (plain) {
       // Convert plain text newlines to <br>
       const safeHtml = plain
@@ -1607,6 +1666,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
           suppressContentEditableWarning
           onInput={syncContent}
           onPaste={handlePaste}
+          onDrop={handleDrop}
           style={{
             minHeight,
             padding: '10px 12px',
@@ -5053,9 +5113,11 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
   const [savingTags, setSavingTags] = useState(false);
   const { systemTags } = useMemo(() => splitCandidateTags(candidate.tags), [candidate.tags]);
 
-  // Rejection reason
+  // Rejection reason — a closed list, so reasons can be counted in a report.
+  // The free-text note survives only under "other".
   const [showRejectionModal, setShowRejectionModal] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionCode, setRejectionCode] = useState<RejectionReasonCode | ''>('');
+  const [rejectionNote, setRejectionNote] = useState('');
   const [savingRejection, setSavingRejection] = useState(false);
 
   const [screenerQuestions, setScreenerQuestions] = useState<ScreenerQuestion[]>([]);
@@ -5485,15 +5547,20 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
 
   // Rejection handler
   const handleRejectWithReason = async () => {
-    if (!rejectionReason.trim()) {
-      showToast(t('ats.rejectionReasonRequired', 'Please provide a rejection reason'), 'error');
+    if (!rejectionCode) {
+      showToast(t('ats.rejectionReasonRequired', 'Please select a rejection reason'), 'error');
+      return;
+    }
+    if (rejectionCode === 'other' && !rejectionNote.trim()) {
+      showToast(t('ats.rejectionNoteRequired', 'Please describe the reason'), 'error');
       return;
     }
     setSavingRejection(true);
     try {
-      await onReject(rejectionReason.trim());
+      await onReject(serializeRejectionReason(rejectionCode, rejectionNote));
       setShowRejectionModal(false);
-      setRejectionReason('');
+      setRejectionCode('');
+      setRejectionNote('');
       showToast(t('ats.candidateRejected', 'Candidate rejected'), 'success');
     } catch {
       showToast(t('ats.rejectionError', 'Failed to reject candidate'), 'error');
@@ -6109,8 +6176,26 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
 
           {/* Stage pipeline visual */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-              Pipeline
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                Pipeline
+              </div>
+              {(() => {
+                const days = daysInStage(candidate.lastStageChange);
+                const tone = stageAgeTone(candidate.status, days);
+                if (!tone) return null;
+                return (
+                  <div
+                    title={fmtDateTime(candidate.lastStageChange)}
+                    style={{
+                      fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                      color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+                    }}
+                  >
+                    {t('ats.daysInStage', '{{count}} days in this stage', { count: days as number })}
+                  </div>
+                );
+              })()}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
               {(() => {
@@ -6131,7 +6216,7 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                   } else if (candidate.lastStageChange) {
                     // Try to infer from lastStageChange timestamp
                     // This is a simple heuristic - in a real system you'd track stage history
-                    const daysSinceLastChange = Math.floor((Date.now() - new Date(candidate.lastStageChange).getTime()) / (1000 * 60 * 60 * 24));
+                    const daysSinceLastChange = daysInStage(candidate.lastStageChange) ?? 0;
                     if (daysSinceLastChange > 7) {
                       lastStageBeforeRejection = 'review';
                     }
@@ -6212,9 +6297,27 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
               <div style={{ fontSize: 10, fontWeight: 700, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                 {t('ats.rejectionReason', 'Rejection reason')}
               </div>
-              <div style={{ fontSize: 12, color: '#7F1D1D', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                {candidate.rejectionReason}
-              </div>
+              {/* Stored values may be a code, "other:<note>", or free text
+                  written before the closed list existed. All three read the
+                  same way here. */}
+              {(() => {
+                const parsed = parseRejectionReason(candidate.rejectionReason);
+                const label = parsed.code
+                  ? t(REJECTION_REASON_LABEL_KEYS[parsed.code], REJECTION_REASON_FALLBACKS[parsed.code])
+                  : null;
+                return (
+                  <>
+                    <div style={{ fontSize: 12, color: '#7F1D1D', lineHeight: 1.5, fontWeight: label ? 600 : 400, whiteSpace: 'pre-wrap' }}>
+                      {label ?? parsed.note}
+                    </div>
+                    {parsed.note && label && (
+                      <div style={{ fontSize: 11.5, color: '#9F1239', lineHeight: 1.5, marginTop: 3, whiteSpace: 'pre-wrap', fontStyle: parsed.legacy ? 'italic' : 'normal' }}>
+                        {parsed.note}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -7188,13 +7291,11 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
               color: 'var(--text-secondary)',
               marginBottom: 16,
             }}>
-              {t('ats.rejectionReasonPrompt', 'Please provide a reason for rejecting this candidate:')}
+              {t('ats.rejectionReasonPrompt', 'Select a reason for rejecting this candidate:')}
             </p>
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder={t('ats.rejectionReasonPlaceholder', 'e.g., Not enough experience, Skills mismatch, etc.')}
-              rows={4}
+            <select
+              value={rejectionCode}
+              onChange={(e) => setRejectionCode(e.target.value as RejectionReasonCode | '')}
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
@@ -7204,16 +7305,48 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                 border: '1px solid var(--border)',
                 outline: 'none',
                 fontFamily: 'inherit',
-                resize: 'vertical',
-                marginBottom: 16,
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                marginBottom: rejectionCode === 'other' ? 10 : 16,
               }}
-            />
+            >
+              <option value="">{t('ats.rejectionReasonSelect', 'Select a reason…')}</option>
+              {REJECTION_REASON_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {t(REJECTION_REASON_LABEL_KEYS[code], REJECTION_REASON_FALLBACKS[code])}
+                </option>
+              ))}
+            </select>
+
+            {/* "Other" is the only reason that keeps a free-text note. */}
+            {rejectionCode === 'other' && (
+              <textarea
+                value={rejectionNote}
+                onChange={(e) => setRejectionNote(e.target.value)}
+                placeholder={t('ats.rejectionNotePlaceholder', 'Describe the reason')}
+                rows={3}
+                autoFocus
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '10px 12px',
+                  fontSize: 13,
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  marginBottom: 16,
+                }}
+              />
+            )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Button
                 variant="secondary"
                 onClick={() => {
                   setShowRejectionModal(false);
-                  setRejectionReason('');
+                  setRejectionCode('');
+                  setRejectionNote('');
                 }}
                 disabled={savingRejection}
               >
@@ -7223,7 +7356,7 @@ const CandidateModal: React.FC<CandidateModalProps> = ({
                 variant="danger"
                 onClick={handleRejectWithReason}
                 loading={savingRejection}
-                disabled={!rejectionReason.trim()}
+                disabled={!rejectionCode || (rejectionCode === 'other' && !rejectionNote.trim())}
               >
                 {t('ats.confirmReject', 'Confirm Rejection')}
               </Button>
@@ -11062,8 +11195,31 @@ const KanbanPanel: React.FC<{
                                 );
                               })()}
                             </div>
-                            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 1 }} title={fmtDateTime(c.appliedAt ?? c.createdAt)}>
-                              {fmtRelativeTime(c.appliedAt ?? c.createdAt)}
+                            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 1, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                              <span title={fmtDateTime(c.appliedAt ?? c.createdAt)}>
+                                {fmtRelativeTime(c.appliedAt ?? c.createdAt)}
+                              </span>
+                              {/* Shown only once a candidate has been sitting in
+                                  this stage for more than two days. */}
+                              {(() => {
+                                const days = daysInStage(c.lastStageChange);
+                                const tone = stageAgeTone(c.status, days);
+                                if (!tone) return null;
+                                return (
+                                  <span
+                                    title={t('ats.daysInStageTooltip', 'Days in current stage')}
+                                    style={{
+                                      fontSize: 9.5, fontWeight: 700, lineHeight: 1.5,
+                                      padding: '0 5px', borderRadius: 4,
+                                      color: tone.fg, background: tone.bg,
+                                      border: `1px solid ${tone.border}`,
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {t('ats.daysInStageShort', '{{count}}d in stage', { count: days as number })}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
 
