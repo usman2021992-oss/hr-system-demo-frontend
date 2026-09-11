@@ -1,17 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Filter, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, Check, ChevronDown, ChevronUp, Building2, Store as StoreIcon } from 'lucide-react';
 import CustomSelect, { SelectOption } from '../../components/ui/CustomSelect';
 import { Input } from '../../components/ui/Input';
+
+/** A company row: logo, name, and how many employees it holds. */
+export interface FilterCompanyOption {
+  value: string;
+  label: string;
+  logoUrl?: string | null;
+  employeeCount?: number;
+}
+
+/** A store row: logo, name, its company (shown underneath), and its headcount. */
+export interface FilterStoreOption {
+  value: string;
+  label: string;
+  companyId: string;
+  companyName?: string;
+  logoUrl?: string | null;
+  employeeCount?: number;
+}
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onApply: (filters: FilterValues) => void;
   initialFilters: FilterValues;
-  companyOptions: SelectOption[];
-  storeOptions: SelectOption[];
+  companyOptions: FilterCompanyOption[];
+  storeOptions: FilterStoreOption[];
   statusOptions: SelectOption[];
   roleOptions: SelectOption[];
   showCompanyFilter: boolean;
@@ -23,6 +41,132 @@ export interface FilterValues {
   department: string;
   status: string;
   role: string;
+}
+
+/**
+ * One selectable row: checkbox, logo, name (with an optional line underneath) and
+ * the headcount on the right, so the size of a selection is readable before applying it.
+ */
+function OptionRow({
+  checked,
+  onToggle,
+  logoUrl,
+  fallback,
+  title,
+  subtitle,
+  countLabel,
+  isLast,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  logoUrl?: string | null;
+  fallback: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  countLabel?: string;
+  isLast: boolean;
+}) {
+  return (
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '9px 12px',
+        cursor: 'pointer',
+        borderBottom: isLast ? 'none' : '1px solid var(--border)',
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--background)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      <input type="checkbox" checked={checked} onChange={onToggle} style={{ display: 'none' }} />
+      <div
+        style={{
+          width: 18,
+          height: 18,
+          borderRadius: '4px',
+          border: `2px solid ${checked ? 'var(--primary)' : 'var(--border)'}`,
+          background: checked ? 'var(--primary)' : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          transition: 'all 0.15s',
+        }}
+      >
+        {checked && <Check size={12} color="#fff" strokeWidth={3} />}
+      </div>
+
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: '6px',
+          flexShrink: 0,
+          overflow: 'hidden',
+          background: 'var(--surface-warm)',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--text-muted)',
+        }}
+      >
+        {logoUrl ? (
+          <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          fallback
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {title}
+        </div>
+        {subtitle && (
+          <div
+            style={{
+              fontSize: '11px',
+              color: 'var(--text-muted)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {subtitle}
+          </div>
+        )}
+      </div>
+
+      {countLabel && (
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            background: 'var(--surface-warm)',
+            border: '1px solid var(--border)',
+            borderRadius: '999px',
+            padding: '2px 8px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {countLabel}
+        </span>
+      )}
+    </label>
+  );
 }
 
 export function FilterModal({
@@ -40,30 +184,46 @@ export function FilterModal({
   const [filters, setFilters] = useState<FilterValues>(initialFilters);
   const [companiesExpanded, setCompaniesExpanded] = useState(false);
   const [storesExpanded, setStoresExpanded] = useState(false);
+  const wasOpen = useRef(open);
 
+  // Seed the draft only on the closed → open transition. Re-seeding on every render
+  // would wipe in-progress selections whenever the page re-renders underneath the
+  // modal (the permissions poll does exactly that every few seconds).
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       setFilters(initialFilters);
     }
+    wasOpen.current = open;
   }, [open, initialFilters]);
 
-  // Filter stores based on selected companies
+  // Stores are scoped by company id, never by parsing the label text.
   const filteredStoreOptions = useMemo(() => {
     if (filters.company_ids.length === 0) {
       return storeOptions;
     }
-    
-    // Extract company IDs from store labels (format: "Store Name (Company Name)")
-    return storeOptions.filter((store) => {
-      // Check if any selected company is in the store's label
-      return filters.company_ids.some((companyId) => {
-        const company = companyOptions.find((c) => c.value === companyId);
-        if (!company) return false;
-        // Check if store label contains the company name
-        return store.label.includes(`(${company.label})`);
-      });
-    });
-  }, [filters.company_ids, storeOptions, companyOptions]);
+    return storeOptions.filter((store) => filters.company_ids.includes(store.companyId));
+  }, [filters.company_ids, storeOptions]);
+
+  const formatCount = (count: number) =>
+    count === 1
+      ? t('employees.filterEmployeeCountOne', '1 employee')
+      : t('employees.filterEmployeeCount', '{{count}} employees', { count });
+
+  const selectedCompanySummary = useMemo(() => {
+    const selected = companyOptions.filter((c) => filters.company_ids.includes(c.value));
+    return {
+      count: selected.length,
+      employees: selected.reduce((sum, c) => sum + (c.employeeCount ?? 0), 0),
+    };
+  }, [companyOptions, filters.company_ids]);
+
+  const selectedStoreSummary = useMemo(() => {
+    const selected = storeOptions.filter((s) => filters.store_ids.includes(s.value));
+    return {
+      count: selected.length,
+      employees: selected.reduce((sum, s) => sum + (s.employeeCount ?? 0), 0),
+    };
+  }, [storeOptions, filters.store_ids]);
 
   const handleApply = () => {
     onApply(filters);
@@ -86,19 +246,17 @@ export function FilterModal({
       const newCompanyIds = prev.company_ids.includes(companyId)
         ? prev.company_ids.filter((id) => id !== companyId)
         : [...prev.company_ids, companyId];
-      
-      // If deselecting a company, also deselect its stores
+
+      // Deselecting a company also drops the stores that belong to it, otherwise a
+      // hidden store id would keep narrowing the list.
       if (!newCompanyIds.includes(companyId)) {
-        const company = companyOptions.find((c) => c.value === companyId);
-        if (company) {
-          const newStoreIds = prev.store_ids.filter((storeId) => {
-            const store = storeOptions.find((s) => s.value === storeId);
-            return store && !store.label.includes(`(${company.label})`);
-          });
-          return { ...prev, company_ids: newCompanyIds, store_ids: newStoreIds };
-        }
+        const newStoreIds = prev.store_ids.filter((storeId) => {
+          const store = storeOptions.find((s) => s.value === storeId);
+          return !store || store.companyId !== companyId;
+        });
+        return { ...prev, company_ids: newCompanyIds, store_ids: newStoreIds };
       }
-      
+
       return { ...prev, company_ids: newCompanyIds };
     });
   };
@@ -237,11 +395,17 @@ export function FilterModal({
                     marginBottom: '6px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <span>{t('employees.filterCompany', 'Company')}</span>
-                    {filters.company_ids.length > 0 && (
+                    {selectedCompanySummary.count > 0 && (
                       <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
-                        ({filters.company_ids.length})
+                        {selectedCompanySummary.count === 1
+                          ? t('employees.filterCompanyCountOne', '1 company')
+                          : t('employees.filterCompanyCount', '{{count}} companies', {
+                              count: selectedCompanySummary.count,
+                            })}
+                        {' · '}
+                        {formatCount(selectedCompanySummary.employees)}
                       </span>
                     )}
                   </div>
@@ -260,48 +424,16 @@ export function FilterModal({
                     }}
                   >
                     {companyOptions.map((company, index) => (
-                      <label
+                      <OptionRow
                         key={company.value}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '10px 12px',
-                          cursor: 'pointer',
-                          borderBottom: index < companyOptions.length - 1 ? '1px solid var(--border)' : 'none',
-                          transition: 'background 0.15s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--background)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.company_ids.includes(company.value)}
-                          onChange={() => toggleCompany(company.value)}
-                          style={{ display: 'none' }}
-                        />
-                        <div
-                          style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: '4px',
-                            border: `2px solid ${filters.company_ids.includes(company.value) ? 'var(--primary)' : 'var(--border)'}`,
-                            background: filters.company_ids.includes(company.value) ? 'var(--primary)' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginRight: '10px',
-                            flexShrink: 0,
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          {filters.company_ids.includes(company.value) && (
-                            <Check size={12} color="#fff" strokeWidth={3} />
-                          )}
-                        </div>
-                        <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-                          {company.label}
-                        </span>
-                      </label>
+                        checked={filters.company_ids.includes(company.value)}
+                        onToggle={() => toggleCompany(company.value)}
+                        logoUrl={company.logoUrl}
+                        fallback={<Building2 size={14} />}
+                        title={company.label}
+                        countLabel={formatCount(company.employeeCount ?? 0)}
+                        isLast={index === companyOptions.length - 1}
+                      />
                     ))}
                   </div>
                 )}
@@ -330,11 +462,17 @@ export function FilterModal({
                   marginBottom: '6px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span>{t('employees.filterStore', 'Store')}</span>
-                  {filters.store_ids.length > 0 && (
+                  {selectedStoreSummary.count > 0 && (
                     <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
-                      ({filters.store_ids.length})
+                      {selectedStoreSummary.count === 1
+                        ? t('employees.filterStoreCountOne', '1 store')
+                        : t('employees.filterStoreCount', '{{count}} stores', {
+                            count: selectedStoreSummary.count,
+                          })}
+                      {' · '}
+                      {formatCount(selectedStoreSummary.employees)}
                     </span>
                   )}
                 </div>
@@ -360,48 +498,17 @@ export function FilterModal({
                     </div>
                   ) : (
                     filteredStoreOptions.map((store, index) => (
-                      <label
+                      <OptionRow
                         key={store.value}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '10px 12px',
-                          cursor: 'pointer',
-                          borderBottom: index < filteredStoreOptions.length - 1 ? '1px solid var(--border)' : 'none',
-                          transition: 'background 0.15s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--background)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.store_ids.includes(store.value)}
-                          onChange={() => toggleStore(store.value)}
-                          style={{ display: 'none' }}
-                        />
-                        <div
-                          style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: '4px',
-                            border: `2px solid ${filters.store_ids.includes(store.value) ? 'var(--primary)' : 'var(--border)'}`,
-                            background: filters.store_ids.includes(store.value) ? 'var(--primary)' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginRight: '10px',
-                            flexShrink: 0,
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          {filters.store_ids.includes(store.value) && (
-                            <Check size={12} color="#fff" strokeWidth={3} />
-                          )}
-                        </div>
-                        <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-                          {store.label}
-                        </span>
-                      </label>
+                        checked={filters.store_ids.includes(store.value)}
+                        onToggle={() => toggleStore(store.value)}
+                        logoUrl={store.logoUrl}
+                        fallback={<StoreIcon size={14} />}
+                        title={store.label}
+                        subtitle={store.companyName || undefined}
+                        countLabel={formatCount(store.employeeCount ?? 0)}
+                        isLast={index === filteredStoreOptions.length - 1}
+                      />
                     ))
                   )}
                 </div>
