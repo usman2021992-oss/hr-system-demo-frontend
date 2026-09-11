@@ -4,12 +4,16 @@ import { Employee, EmployeeAssociationsResponse, EmployeeListResponse } from '..
 export interface EmployeeListParams {
   search?: string;
   storeId?: number;
+  /** Multi-select store filter. Applied server-side, so paging stays correct. */
+  storeIds?: number[];
   department?: string;
   status?: string;
   role?: string;
   page?: number;
   limit?: number;
   targetCompanyId?: number | null;
+  /** Multi-select company filter. Applied server-side, so paging stays correct. */
+  companyIds?: number[];
   excludeAdmins?: boolean;
   includeStoreTerminals?: boolean;
   /** Area managers: employees in supervised stores (aligned with shift assignment). */
@@ -25,12 +29,14 @@ export async function getEmployees(params?: EmployeeListParams): Promise<Employe
   const query: Record<string, string | number> = {};
   if (params?.search) query.search = params.search;
   if (params?.storeId != null) query.store_id = params.storeId;
+  if (params?.storeIds?.length) query.store_ids = params.storeIds.join(',');
   if (params?.department) query.department = params.department;
   if (params?.status) query.status = params.status;
   if (params?.role) query.role = params.role;
   if (params?.page != null) query.page = params.page;
   if (params?.limit != null) query.limit = params.limit;
   if (params?.targetCompanyId != null) query.target_company_id = params.targetCompanyId;
+  if (params?.companyIds?.length) query.company_ids = params.companyIds.join(',');
   if (params?.excludeAdmins) query.exclude_admins = 1;
   if (params?.includeStoreTerminals) query.include_store_terminals = 1;
   if (params?.forShiftPlanning) query.for_shift_planning = 1;

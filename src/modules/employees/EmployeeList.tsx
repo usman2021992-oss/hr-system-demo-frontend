@@ -6,7 +6,11 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeftRight } from "lucide-react";
 import { createPortal } from "react-dom";
 import { getEmployees } from "../../api/employees";
-import apiClient, { getAvatarUrl } from "../../api/client";
+import apiClient, {
+  getAvatarUrl,
+  getCompanyLogoUrl,
+  getStoreLogoUrl,
+} from "../../api/client";
 import { listTransfers, TransferAssignment } from "../../api/transfers";
 import { translateApiError } from "../../utils/apiErrors";
 import { getStores } from "../../api/stores";
@@ -22,13 +26,20 @@ import { Pagination } from "../../components/ui/Pagination";
 import { EmployeeForm } from "./EmployeeForm";
 import { BulkImportModal } from "./BulkImportModal";
 import { ExportConfirmModal } from "./ExportConfirmModal";
-import { FilterModal, FilterValues } from "./FilterModal";
+import {
+  FilterModal,
+  FilterValues,
+  FilterCompanyOption,
+  FilterStoreOption,
+} from "./FilterModal";
 import { exportEmployeesToExcel } from "./bulkImportUtils";
 import CustomSelect, { SelectOption } from "../../components/ui/CustomSelect";
 
 interface CompanyOption {
   id: number;
   name: string;
+  logoFilename?: string | null;
+  employeeCount?: number;
 }
 
 const ROLE_BADGE_VARIANT: Record<
@@ -117,6 +128,17 @@ export function EmployeeList() {
     [searchParams]
   );
 
+  // Numeric forms for the API layer, memoized so the fetch effect is not re-run by identity churn.
+  const storeIdNumbers = useMemo(
+    () => storeIdsArray.map((id) => parseInt(id, 10)).filter((id) => !Number.isNaN(id)),
+    [storeIdsArray],
+  );
+
+  const companyIdNumbers = useMemo(
+    () => companyIdsArray.map((id) => parseInt(id, 10)).filter((id) => !Number.isNaN(id)),
+    [companyIdsArray],
+  );
+
   const search = searchParams.get("search") ?? "";
   const storeIds = storeIdsArray;
   const department = searchParams.get("department") ?? "";
@@ -143,17 +165,23 @@ export function EmployeeList() {
     companyIds.length > 0
   );
 
-  const companyOptions = useMemo<SelectOption[]>(() => {
+  const companyOptions = useMemo<FilterCompanyOption[]>(() => {
     return companies.map((c) => ({
       value: String(c.id),
       label: c.name,
+      logoUrl: getCompanyLogoUrl(c.logoFilename),
+      employeeCount: c.employeeCount ?? 0,
     }));
   }, [companies]);
 
-  const storeOptions = useMemo<SelectOption[]>(() => {
+  const storeOptions = useMemo<FilterStoreOption[]>(() => {
     return stores.map((s) => ({
       value: String(s.id),
-      label: s.companyName ? `${s.name} (${s.companyName})` : s.name,
+      label: s.name,
+      companyId: String(s.companyId),
+      companyName: s.companyName ?? "",
+      logoUrl: getStoreLogoUrl(s.logoFilename) ?? getCompanyLogoUrl(s.companyLogoFilename),
+      employeeCount: s.employeeCount ?? 0,
     }));
   }, [stores]);
 
@@ -176,6 +204,19 @@ export function EmployeeList() {
     [t, tRole],
   );
 
+  // One stable object for the modal. A new literal on every render would re-seed the
+  // modal's draft state and silently undo selections the user had not applied yet.
+  const initialFilterValues = useMemo<FilterValues>(
+    () => ({
+      company_ids: companyIds,
+      store_ids: storeIds,
+      department,
+      status,
+      role,
+    }),
+    [companyIds, storeIds, department, status, role],
+  );
+
   const handleExportClick = useCallback(() => {
     setShowExportModal(true);
   }, []);
@@ -184,36 +225,20 @@ export function EmployeeList() {
     if (exporting) return;
     setExporting(true);
     try {
-      // For multiple stores or companies, we need to fetch all employees and filter client-side
+      // The server applies every filter, so the export matches the list exactly.
       const res = await getEmployees({
         search: search || undefined,
-        storeId: storeIds.length === 1 ? parseInt(storeIds[0], 10) : undefined,
+        storeIds: storeIdNumbers.length > 0 ? storeIdNumbers : undefined,
         department: department || undefined,
         status: status || undefined,
         role: role || undefined,
         page: 1,
         limit: 10000,
-        targetCompanyId: companyIds.length === 1 ? parseInt(companyIds[0], 10) : undefined,
+        companyIds: companyIdNumbers.length > 0 ? companyIdNumbers : undefined,
         includeSensitive: true,
       });
-      
-      let employeesToExport = res.employees;
-      
-      // If multiple companies selected, filter client-side
-      if (companyIds.length > 1) {
-        const companyIdNumbers = companyIds.map((id) => parseInt(id, 10));
-        employeesToExport = employeesToExport.filter((emp) => 
-          emp.companyId && companyIdNumbers.includes(emp.companyId)
-        );
-      }
-      
-      // If multiple stores selected, filter client-side
-      if (storeIds.length > 1) {
-        const storeIdNumbers = storeIds.map((id) => parseInt(id, 10));
-        employeesToExport = employeesToExport.filter((emp) => 
-          emp.storeId && storeIdNumbers.includes(emp.storeId)
-        );
-      }
+
+      const employeesToExport = res.employees;
       
       const safeName = `employees_${new Date().toISOString().slice(0, 10)}.xlsx`;
       exportEmployeesToExcel(employeesToExport, safeName);
@@ -224,7 +249,7 @@ export function EmployeeList() {
     } finally {
       setExporting(false);
     }
-  }, [exporting, search, storeIds, department, status, role, companyIds, t, showToast]);
+  }, [exporting, search, storeIdNumbers, department, status, role, companyIdNumbers, t, showToast]);
 
   const estimatedFileSize = useMemo(() => {
     const avgBytesPerEmployee = 500; // Rough estimate
@@ -374,13 +399,13 @@ export function EmployeeList() {
     return tags;
   }, [companyIds, storeIds, department, status, role, companies, stores, t, tRole]);
 
-  // Re-fetch stores whenever the company filter changes (super admin viewing a different company)
+  // Load every store the caller may see, once. The filter modal narrows them by
+  // company locally, so changing the company selection never refetches the list.
   useEffect(() => {
-    const targetId = companyIds.length === 1 ? parseInt(companyIds[0], 10) : undefined;
-    getStores(targetId ? { targetCompanyId: targetId } : undefined)
+    getStores()
       .then(setStores)
       .catch(() => {});
-  }, [companyIds.join(",")]);
+  }, []);
 
   useEffect(() => {
     if (!isAdminOrHr && !isSuperAdmin) return;
@@ -389,60 +414,59 @@ export function EmployeeList() {
       .then((res) => {
         const data = res.data?.data;
         if (Array.isArray(data)) {
-          setCompanies(data.map((c) => ({ id: c.id, name: c.name })));
+          setCompanies(
+            data.map((c) => ({
+              id: c.id,
+              name: c.name,
+              logoFilename: c.logoFilename ?? null,
+              employeeCount: c.employeeCount ?? 0,
+            })),
+          );
         }
       })
       .catch(() => {});
   }, [isAdminOrHr, isSuperAdmin]);
 
   useEffect(() => {
+    // Every filter is applied server-side. Trimming a page here would hide rows the
+    // server never sent and make both the total and the page count wrong.
+    let cancelled = false;
     setLoading(true);
     setError(null);
     getEmployees({
       search: search || undefined,
-      storeId: storeIds.length === 1 ? parseInt(storeIds[0], 10) : undefined,
+      storeIds: storeIdNumbers.length > 0 ? storeIdNumbers : undefined,
       department: department || undefined,
       status: status || undefined,
       role: role || undefined,
       page,
       limit,
-      targetCompanyId: companyIds.length === 1 ? parseInt(companyIds[0], 10) : undefined,
+      companyIds: companyIdNumbers.length > 0 ? companyIdNumbers : undefined,
     })
       .then((res) => {
-        let filteredEmployees = res.employees;
-        
-        // If multiple companies selected, filter client-side
-        if (companyIds.length > 1) {
-          const companyIdNumbers = companyIds.map((id) => parseInt(id, 10));
-          filteredEmployees = filteredEmployees.filter((emp) => 
-            emp.companyId && companyIdNumbers.includes(emp.companyId)
-          );
-        }
-        
-        // If multiple stores selected, filter client-side
-        if (storeIds.length > 1) {
-          const storeIdNumbers = storeIds.map((id) => parseInt(id, 10));
-          filteredEmployees = filteredEmployees.filter((emp) => 
-            emp.storeId && storeIdNumbers.includes(emp.storeId)
-          );
-        }
-        
-        const needsClientSideFiltering = companyIds.length > 1 || storeIds.length > 1;
-        setEmployees(filteredEmployees);
-        setTotal(needsClientSideFiltering ? filteredEmployees.length : res.total);
-        setPages(needsClientSideFiltering ? Math.ceil(filteredEmployees.length / limit) : res.pages);
+        if (cancelled) return;
+        setEmployees(res.employees);
+        setTotal(res.total);
+        setPages(res.pages);
       })
       .catch((err) => {
+        if (cancelled) return;
         setError(translateApiError(err, t, t("employees.errorLoad")));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    // A slower earlier response must never overwrite the newest filter's result.
+    return () => {
+      cancelled = true;
+    };
   }, [
     search,
-    storeIds,
+    storeIdNumbers,
     department,
     status,
     role,
-    companyIds,
+    companyIdNumbers,
     page,
     listReloadTick,
     limit,
@@ -1271,13 +1295,7 @@ export function EmployeeList() {
         open={showFilterModal}
         onClose={() => setShowFilterModal(false)}
         onApply={handleApplyFilters}
-        initialFilters={{
-          company_ids: companyIds,
-          store_ids: storeIds,
-          department: department,
-          status: status,
-          role: role,
-        }}
+        initialFilters={initialFilterValues}
         companyOptions={companyOptions}
         storeOptions={storeOptions}
         statusOptions={statusOptions}
