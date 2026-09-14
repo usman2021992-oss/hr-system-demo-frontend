@@ -873,6 +873,8 @@ const en = {
     allCompanies: 'All Companies',
     allStatuses: 'All Statuses',
     allCountries: 'All Countries',
+    companyStoreCount: '{{count}} stores',
+    companyStoreCountOne: '1 store',
     newStore: 'New Store',
     editStore: 'Edit Store',
     noStores: 'No stores found',
@@ -1871,7 +1873,7 @@ const en = {
     form: {
       employee: 'Employee',
       selectEmployee: 'Select employee',
-      employeeRoleOnly: 'Only users with Employee role are shown.',
+      transferableRolesOnly: 'All store roles are listed — Employee, Store Manager, Area Manager and HR. Admins cannot be transferred.',
       originStore: 'Origin store',
       useEmployeeStore: 'Use employee assigned store',
       detectedOrigin: 'Detected origin: {{store}}',

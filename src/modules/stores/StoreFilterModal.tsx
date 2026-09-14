@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Filter } from 'lucide-react';
@@ -33,11 +33,15 @@ export function StoreFilterModal({
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<StoreFilterValues>(initialFilters);
+  const wasOpen = useRef(open);
 
+  // Seed the draft only on the closed → open transition, so a re-render underneath
+  // the modal can never wipe a selection that has not been applied yet.
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       setFilters(initialFilters);
     }
+    wasOpen.current = open;
   }, [open, initialFilters]);
 
   const handleApply = () => {

@@ -867,6 +867,8 @@ const it = {
     allCompanies: 'Tutte le aziende',
     allStatuses: 'Tutti gli stati',
     allCountries: 'Tutti i paesi',
+    companyStoreCount: '{{count}} negozi',
+    companyStoreCountOne: '1 negozio',
     newStore: 'Nuovo Negozio',
     editStore: 'Modifica Negozio',
     noStores: 'Nessun negozio trovato',
@@ -1865,7 +1867,7 @@ const it = {
     form: {
       employee: 'Dipendente',
       selectEmployee: 'Seleziona dipendente',
-      employeeRoleOnly: 'Vengono mostrati solo utenti con ruolo Employee.',
+      transferableRolesOnly: 'Sono elencati tutti i ruoli di negozio: Dipendente, Responsabile negozio, Area Manager e HR. Gli amministratori non sono trasferibili.',
       originStore: 'Negozio origine',
       useEmployeeStore: 'Usa negozio assegnato al dipendente',
       detectedOrigin: 'Origine rilevata: {{store}}',

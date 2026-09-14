@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Filter, Check, ChevronDown, ChevronUp, Building2, Store as StoreIcon } from 'lucide-react';
 import CustomSelect, { SelectOption } from '../../components/ui/CustomSelect';
+import { EntityOptionRow, CountPill } from '../../components/ui/EntityOption';
 import { Input } from '../../components/ui/Input';
 
 /** A company row: logo, name, and how many employees it holds. */
@@ -74,6 +75,7 @@ function OptionRow({
         gap: '10px',
         padding: '9px 12px',
         cursor: 'pointer',
+        color: 'var(--text-primary)',
         borderBottom: isLast ? 'none' : '1px solid var(--border)',
         transition: 'background 0.15s',
       }}
@@ -98,73 +100,13 @@ function OptionRow({
         {checked && <Check size={12} color="#fff" strokeWidth={3} />}
       </div>
 
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: '6px',
-          flexShrink: 0,
-          overflow: 'hidden',
-          background: 'var(--surface-warm)',
-          border: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--text-muted)',
-        }}
-      >
-        {logoUrl ? (
-          <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          fallback
-        )}
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: '13px',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {title}
-        </div>
-        {subtitle && (
-          <div
-            style={{
-              fontSize: '11px',
-              color: 'var(--text-muted)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {subtitle}
-          </div>
-        )}
-      </div>
-
-      {countLabel && (
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            color: 'var(--text-secondary)',
-            background: 'var(--surface-warm)',
-            border: '1px solid var(--border)',
-            borderRadius: '999px',
-            padding: '2px 8px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {countLabel}
-        </span>
-      )}
+      <EntityOptionRow
+        logoUrl={logoUrl}
+        fallback={fallback}
+        title={title}
+        subtitle={subtitle}
+        trailing={countLabel ? <CountPill>{countLabel}</CountPill> : undefined}
+      />
     </label>
   );
 }

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, Building2, CalendarClock, Clock3, Filter, MapPin, Sparkles, Store, UserRound, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getAvatarUrl, getStoreLogoUrl } from '../../api/client';
+import { getAvatarUrl, getStoreLogoUrl, getCompanyLogoUrl } from '../../api/client';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Employee, Store as StoreType, Company } from '../../types';
 import { getEmployees, EmployeeListParams } from '../../api/employees';
@@ -22,10 +22,33 @@ import {
   completeTransfer,
 } from '../../api/transfers';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import { Badge } from '../../components/ui/Badge';
+import { EntityOptionRow, CountPill } from '../../components/ui/EntityOption';
 import { TransferFilterModal, TransferFilterValues } from './TransferFilterModal';
 import { SelectOption } from '../../components/ui/CustomSelect';
 
 const WRITE_ROLES = ['admin', 'hr', 'area_manager'] as const;
+
+/**
+ * Everyone who actually staffs a store can be moved between stores, so the picker
+ * offers them all. Admins and store terminals are not store staff, and the API
+ * refuses them, so they never reach the list. Mirrors the server's subject rule.
+ */
+const TRANSFERABLE_SUBJECT_ROLES = ['employee', 'store_manager', 'area_manager', 'hr'] as const;
+
+const SUBJECT_ROLE_BADGE: Record<
+  (typeof TRANSFERABLE_SUBJECT_ROLES)[number],
+  'info' | 'success' | 'warning' | 'neutral'
+> = {
+  hr: 'info',
+  area_manager: 'success',
+  store_manager: 'warning',
+  employee: 'neutral',
+};
+
+function isTransferableSubject(employee: Employee): boolean {
+  return (TRANSFERABLE_SUBJECT_ROLES as readonly string[]).includes(employee.role);
+}
 
 interface TransferFormState {
   user_id: string;
@@ -134,7 +157,7 @@ async function loadEmployeesByPages(baseParams: Omit<EmployeeListParams, 'page' 
   } while (page <= pages);
 
   return Array.from(new Map(all.map((emp) => [emp.id, emp])).values())
-    .filter((emp) => emp.role === 'employee' && emp.status === 'active')
+    .filter((emp) => isTransferableSubject(emp) && emp.status === 'active')
     .sort((a, b) => `${a.name} ${a.surname}`.localeCompare(`${b.name} ${b.surname}`));
 }
 
@@ -153,6 +176,7 @@ export default function TransfersPage() {
   const [storeFilter, setStoreFilter] = useState<string>('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [transfers, setTransfers] = useState<TransferAssignment[]>([]);
+  const transfersRequestRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessNotice | null>(null);
@@ -257,20 +281,75 @@ export default function TransfersPage() {
       .catch(() => setStores([]));
   }, [isAdminOrHr, isSuperAdmin]);
 
-  // Filter options
+  // Filter options. The label stays plain text because CustomSelect searches it;
+  // render/selectedRender carry the visual row.
+  const employeeCountLabel = useCallback(
+    (count: number) =>
+      count === 1
+        ? t('employees.filterEmployeeCountOne', '1 employee')
+        : t('employees.filterEmployeeCount', '{{count}} employees', { count }),
+    [t],
+  );
+
   const companyOptions = useMemo<SelectOption[]>(() => {
-    return companies.map((c) => ({
-      value: String(c.id),
-      label: c.name,
-    }));
-  }, [companies]);
+    return companies.map((c) => {
+      const logoUrl = getCompanyLogoUrl(c.logoFilename);
+      return {
+        value: String(c.id),
+        label: c.name,
+        render: (
+          <EntityOptionRow
+            logoUrl={logoUrl}
+            fallback={<Building2 size={14} />}
+            title={c.name}
+            trailing={<CountPill>{employeeCountLabel(c.employeeCount ?? 0)}</CountPill>}
+          />
+        ),
+        selectedRender: (
+          <EntityOptionRow
+            logoUrl={logoUrl}
+            fallback={<Building2 size={14} />}
+            title={c.name}
+            size={22}
+            compact
+            trailing={<CountPill>{employeeCountLabel(c.employeeCount ?? 0)}</CountPill>}
+          />
+        ),
+      };
+    });
+  }, [companies, employeeCountLabel]);
 
   const storeOptions = useMemo<SelectOption[]>(() => {
-    return stores.map((s) => ({
-      value: String(s.id),
-      label: s.companyName ? `${s.name} (${s.companyName})` : s.name,
-    }));
-  }, [stores]);
+    return stores.map((s) => {
+      const logoUrl = getStoreLogoUrl(s.logoFilename) ?? getCompanyLogoUrl(s.companyLogoFilename);
+      const companyName = s.companyName ?? '';
+      return {
+        value: String(s.id),
+        // Searchable by store and by company name.
+        label: companyName ? `${s.name} (${companyName})` : s.name,
+        render: (
+          <EntityOptionRow
+            logoUrl={logoUrl}
+            fallback={<Store size={14} />}
+            title={s.name}
+            subtitle={companyName || undefined}
+            trailing={<CountPill>{employeeCountLabel(s.employeeCount ?? 0)}</CountPill>}
+          />
+        ),
+        selectedRender: (
+          <EntityOptionRow
+            logoUrl={logoUrl}
+            fallback={<Store size={14} />}
+            title={s.name}
+            subtitle={companyName || undefined}
+            size={22}
+            compact
+            trailing={<CountPill>{employeeCountLabel(s.employeeCount ?? 0)}</CountPill>}
+          />
+        ),
+      };
+    });
+  }, [stores, employeeCountLabel]);
 
   const statusOptions = useMemo<SelectOption[]>(() => [
     { value: 'active', label: t('transfers.status.active', 'Active') },
@@ -279,6 +358,17 @@ export default function TransfersPage() {
   ], [t]);
 
   const hasActiveFilters = !!(search || companyFilter || storeFilter || (statusFilter !== 'all'));
+
+  // A new literal on every render would re-seed the modal's draft and silently undo
+  // selections the user had not applied yet.
+  const initialFilterValues = useMemo<TransferFilterValues>(
+    () => ({
+      company_id: companyFilter,
+      store_id: storeFilter,
+      status: statusFilter !== 'all' ? statusFilter : '',
+    }),
+    [companyFilter, storeFilter, statusFilter],
+  );
 
   const activeFilterTags = useMemo(() => {
     const tags: Array<{ key: string; label: string; value: string }> = [];
@@ -348,27 +438,25 @@ export default function TransfersPage() {
   }, []);
 
   const fetchTransfers = useCallback(async () => {
+    // A slower earlier response must never repaint over a newer filter's result.
+    const requestId = ++transfersRequestRef.current;
     setLoading(true);
     setError(null);
     try {
       const params: any = {};
       if (statusFilter !== 'all') params.status = statusFilter;
       if (storeFilter) params.store_id = parseInt(storeFilter, 10);
-      // Note: Backend doesn't support company_id filter directly, but we can filter client-side
+      if (companyFilter) params.company_id = parseInt(companyFilter, 10);
       const data = await listTransfers(Object.keys(params).length > 0 ? params : undefined);
-      
-      // Client-side company filter
-      let filtered = data.transfers;
-      if (companyFilter) {
-        filtered = filtered.filter(t => String(t.companyId) === companyFilter);
-      }
-      
-      setTransfers(filtered);
+
+      if (requestId !== transfersRequestRef.current) return;
+      setTransfers(data.transfers);
     } catch (err: any) {
+      if (requestId !== transfersRequestRef.current) return;
       const code = err?.response?.data?.code as string | undefined;
       setError(code ? t(`errors.${code}`, t('errors.DEFAULT')) : t('errors.DEFAULT'));
     } finally {
-      setLoading(false);
+      if (requestId === transfersRequestRef.current) setLoading(false);
     }
   }, [statusFilter, storeFilter, companyFilter, t]);
 
@@ -1370,17 +1458,26 @@ export default function TransfersPage() {
                                       <img src={avatarUrl} alt={fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : initials}
                                   </span>
-                                  <span style={{ minWidth: 0 }}>
+                                  <span style={{ minWidth: 0, flex: 1 }}>
                                     <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                       {fullName}
                                     </span>
                                     <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      <span>{roleLabel}</span>
-                                      {emp.storeName ? <span>{` · ${emp.storeName}`}</span> : null}
+                                      {emp.storeName ? <span>{emp.storeName}</span> : null}
                                       {emp.companyName ? (
-                                        <span style={{ color: '#0f766e', fontWeight: 700 }}>{` · ${emp.companyName}`}</span>
+                                        <span style={{ color: '#0f766e', fontWeight: 700 }}>
+                                          {emp.storeName ? ` · ${emp.companyName}` : emp.companyName}
+                                        </span>
                                       ) : null}
                                     </span>
+                                  </span>
+                                  {/* The role moved out of the subtitle into a tag, so
+                                      a manager is recognisable at a glance now that the
+                                      picker offers more than plain employees. */}
+                                  <span style={{ flexShrink: 0 }}>
+                                    <Badge variant={SUBJECT_ROLE_BADGE[emp.role as keyof typeof SUBJECT_ROLE_BADGE] ?? 'neutral'} size="sm">
+                                      {roleLabel}
+                                    </Badge>
                                   </span>
                                 </button>
                               );
@@ -1419,22 +1516,34 @@ export default function TransfersPage() {
                           <img src={selectedEmployeeAvatarUrl} alt={selectedEmployeeFullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : selectedEmployeeInitials}
                       </div>
-                      <div style={{ minWidth: 0 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {selectedEmployeeFullName}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          <span>{selectedEmployeeRoleLabel}</span>
-                          {selectedEmployee.storeName ? <span>{` · ${selectedEmployee.storeName}`}</span> : null}
+                          {selectedEmployee.storeName ? <span>{selectedEmployee.storeName}</span> : null}
                           {selectedEmployee.companyName ? (
-                            <span style={{ color: '#0f766e', fontWeight: 700 }}>{` · ${selectedEmployee.companyName}`}</span>
+                            <span style={{ color: '#0f766e', fontWeight: 700 }}>
+                              {selectedEmployee.storeName ? ` · ${selectedEmployee.companyName}` : selectedEmployee.companyName}
+                            </span>
                           ) : null}
                         </div>
                       </div>
+                      <span style={{ flexShrink: 0 }}>
+                        <Badge
+                          variant={SUBJECT_ROLE_BADGE[selectedEmployee.role as keyof typeof SUBJECT_ROLE_BADGE] ?? 'neutral'}
+                          size="sm"
+                        >
+                          {selectedEmployeeRoleLabel}
+                        </Badge>
+                      </span>
                     </div>
                   )}
                   <div style={helpTextStyle}>
-                    {t('transfers.form.employeeRoleOnly', 'Vengono mostrati solo utenti con ruolo Employee.')}
+                    {t(
+                      'transfers.form.transferableRolesOnly',
+                      'Sono elencati tutti i ruoli assegnati a un negozio; gli amministratori non sono trasferibili.',
+                    )}
                   </div>
                 </div>
 
@@ -2225,11 +2334,7 @@ export default function TransfersPage() {
         open={showFilterModal}
         onClose={() => setShowFilterModal(false)}
         onApply={handleApplyFilters}
-        initialFilters={{
-          company_id: companyFilter,
-          store_id: storeFilter,
-          status: statusFilter !== 'all' ? statusFilter : '',
-        }}
+        initialFilters={initialFilterValues}
         companyOptions={companyOptions}
         storeOptions={storeOptions}
         statusOptions={statusOptions}
