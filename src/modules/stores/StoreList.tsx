@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ReactCountryFlag from 'react-country-flag';
@@ -18,6 +18,7 @@ import { Input } from '../../components/ui/Input';
 import { Alert } from '../../components/ui/Alert';
 import { Select } from '../../components/ui/Select';
 import CustomSelect, { SelectOption } from '../../components/ui/CustomSelect';
+import { EntityOptionRow, CountPill } from '../../components/ui/EntityOption';
 import { LocationFieldGroup } from '../../components/location';
 import { TimezoneOptionContent } from '../../components/timezone/TimezoneOptionContent';
 import { Eye, EyeOff, RefreshCw, Link as LinkIcon, Unlink, Database, CheckCircle, XCircle, Search, X, Filter } from 'lucide-react';
@@ -259,10 +260,18 @@ export function StoreList() {
 
   const countryOptions = useMemo<SelectOption[]>(() => {
     const uniqueCountries = Array.from(new Set(stores.map((s) => s.country).filter((c): c is string => !!c)));
-    return uniqueCountries.map((c) => ({
-      value: c,
-      label: getCountryDisplayName(c) || c,
-    }));
+    return uniqueCountries
+      .map((code) => {
+        const name = getCountryDisplayName(code) || code;
+        const row = (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <ReactCountryFlag countryCode={code} svg title={name} style={{ width: '1.1em', height: '1.1em', borderRadius: 2, flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+          </span>
+        );
+        return { value: code, label: name, render: row, selectedRender: row };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [stores]);
 
   const showCompanyFilter = (isAdminOrHr || isSuperAdmin) && companies.length > 0;
@@ -316,39 +325,59 @@ export function StoreList() {
     }));
   }, [browserTimezone, formData.timezone]);
 
+  const storeCountLabel = useCallback(
+    (count: number) =>
+      count === 1
+        ? t('stores.companyStoreCountOne', '1 store')
+        : t('stores.companyStoreCount', '{{count}} stores', { count }),
+    [t],
+  );
+
+  // Shared by the filter modal and the new/edit store form, so a company reads the
+  // same in both: logo, name, and how many stores it already owns.
   const companyOptions = useMemo<SelectOption[]>(() => {
-    return companies.map((c) => ({
-      value: String(c.id),
-      label: c.name,
-      render: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {c.logoFilename && getCompanyLogoUrl(c.logoFilename) ? (
-            <img
-              src={getCompanyLogoUrl(c.logoFilename) || ''}
-              alt={c.name}
-              style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'cover' }}
-            />
-          ) : (
-            <div style={{
-              width: 18,
-              height: 18,
-              borderRadius: 4,
-              background: getCompanyAvatarColor(c.name),
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 8,
-            }}>
-              {getCompanyInitials(c.name)}
-            </div>
-          )}
-          <span>{c.name}</span>
-        </div>
-      )
-    }));
-  }, [companies]);
+    return companies.map((c) => {
+      const initialsFallback = (
+        <span style={{
+          width: '100%',
+          height: '100%',
+          background: getCompanyAvatarColor(c.name),
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 800,
+          fontSize: 9,
+        }}>
+          {getCompanyInitials(c.name)}
+        </span>
+      );
+      const row = (
+        <EntityOptionRow
+          logoUrl={c.logoFilename ? getCompanyLogoUrl(c.logoFilename) : null}
+          fallback={initialsFallback}
+          title={c.name}
+          size={24}
+          trailing={<CountPill>{storeCountLabel(c.storeCount ?? 0)}</CountPill>}
+        />
+      );
+      return {
+        value: String(c.id),
+        label: c.name,
+        render: row,
+        selectedRender: (
+          <EntityOptionRow
+            logoUrl={c.logoFilename ? getCompanyLogoUrl(c.logoFilename) : null}
+            fallback={initialsFallback}
+            title={c.name}
+            size={22}
+            compact
+            trailing={<CountPill>{storeCountLabel(c.storeCount ?? 0)}</CountPill>}
+          />
+        ),
+      };
+    });
+  }, [companies, storeCountLabel]);
 
   const activeEmployeeCount = editingStore?.employeeCount ?? 0;
   const maxCapacityLabel = editingStore?.maxStaff != null ? String(editingStore.maxStaff) : '—';

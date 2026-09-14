@@ -86,6 +86,8 @@ export interface TransferListParams {
   status?: TransferStatus;
   user_id?: number;
   store_id?: number;
+  /** Applied server-side; the list is unpaginated, so this only saves the round trip. */
+  company_id?: number;
   date_from?: string;
   date_to?: string;
 }
