@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, Clock3, Moon, Palmtree, Store as StoreIcon, Thermometer, Users } from 'lucide-react';
 import { Shift } from '../../api/shifts';
-import { LeaveBlock } from '../../api/leave';
+import { LeaveBlock, isLeaveGranted } from '../../api/leave';
 import { TransferAssignment } from '../../api/transfers';
 import { WindowDisplayActivity } from '../../api/windowDisplay';
 import { getAvatarUrl } from '../../api/client';
@@ -242,9 +242,7 @@ export default function MonthlyCalendar({
 
   if (leaveBlocks) {
     for (const lb of leaveBlocks) {
-      const normalizedStatus = String(lb.status ?? '').toLowerCase().replace(/\s+/g, '_');
-      const isApproved = normalizedStatus === 'hr_approved' || normalizedStatus === 'approved';
-      if (!isApproved) continue;
+      if (!isLeaveGranted(lb)) continue;
 
       if (lb.storeId != null && lb.storeName) storeNamesById.set(lb.storeId, lb.storeName);
       if (lb.storeId != null && lb.companyName) companyNamesByStoreId.set(lb.storeId, lb.companyName);

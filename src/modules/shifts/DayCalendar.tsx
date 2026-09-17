@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, CalendarDays, Moon, Palmtree, Thermometer, Coffee, Store as StoreIcon, Clock, Maximize, Minimize } from 'lucide-react';
 import { Shift } from '../../api/shifts';
-import { LeaveBlock } from '../../api/leave';
+import { LeaveBlock, isLeaveGranted } from '../../api/leave';
 import { TransferAssignment } from '../../api/transfers';
 import { WindowDisplayActivity } from '../../api/windowDisplay';
 import { getAvatarUrl } from '../../api/client';
@@ -349,9 +349,10 @@ export default function DayCalendar({
                 return b.id - a.id;
               })[0] ?? null;
             const isVacation = rowLeave?.leaveType === 'vacation';
-            const rowLeaveStatus = String(rowLeave?.status || '').toLowerCase();
-            const isApproved = rowLeaveStatus === 'hr_approved' || rowLeaveStatus === 'approved' || rowLeaveStatus.includes('approved');
-            const isPending = rowLeave ? (!isApproved && !rowLeaveStatus.includes('rejected') && rowLeaveStatus !== 'cancelled') : false;
+            // Withdrawn and refused requests never reach leaveBlocks, so anything
+            // here that is not granted is still in progress.
+            const isApproved = rowLeave ? isLeaveGranted(rowLeave) : false;
+            const isPending = rowLeave ? !isApproved : false;
             const transferTargetStoreId = rowTransfer?.targetStoreId ?? null;
             const transferLaneShifts = transferTargetStoreId == null
               ? []
