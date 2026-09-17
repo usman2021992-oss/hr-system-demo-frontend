@@ -14,7 +14,7 @@ import {
   deleteTemplate,
   createShift,
 } from '../../api/shifts';
-import { getLeaveBlocks, LeaveBlock } from '../../api/leave';
+import { getLeaveBlocks, LeaveBlock, isLeaveGranted } from '../../api/leave';
 import { getStores, getStoreOperatingHours } from '../../api/stores';
 import { getEmployees } from '../../api/employees';
 import { getTransferBlocks, TransferAssignment } from '../../api/transfers';
@@ -794,7 +794,7 @@ export default function ShiftTemplatesPanel({ open, onClose }: ShiftTemplatesPan
         } else {
           sickDays += overlapDays;
         }
-        if (leave.status !== 'hr_approved') {
+        if (!isLeaveGranted(leave)) {
           hasPendingLeave = true;
         }
       }

@@ -299,6 +299,37 @@ export interface LeaveBlock {
   startDate: string;
   endDate: string;
   status: string;
+  /** Who the request still waits on; null once the approval chain is finished. */
+  currentApproverRole: string | null;
+}
+
+/** Withdrawn or refused: never leave, in any spelling the workflow has produced. */
+const WITHDRAWN_OR_REFUSED_LEAVE_STATUSES = new Set<string>([
+  'rejected',
+  'cancelled',
+  'store manager rejected',
+  'area manager rejected',
+  'HR rejected',
+]);
+
+export function isLeaveWithdrawnOrRefused(leave: { status: string }): boolean {
+  return WITHDRAWN_OR_REFUSED_LEAVE_STATUSES.has(leave.status);
+}
+
+/**
+ * Granted leave: no approver left and nobody refused or withdrew it. This is the
+ * rule the database enforces (migration 135) and the one the weekly PDF uses, so
+ * the planner, the printed calendar and the server agree whichever role ends a
+ * company's approval chain. Matching on the status text alone got this wrong in
+ * both directions — 'store manager approved' can still be waiting on HR, while
+ * 'area manager approved' can be final.
+ */
+export function isLeaveGranted(leave: { status: string; currentApproverRole?: string | null }): boolean {
+  return (
+    (leave.currentApproverRole ?? null) === null &&
+    leave.status !== 'pending' &&
+    !isLeaveWithdrawnOrRefused(leave)
+  );
 }
 
 export interface AdminCreateLeavePayload {
@@ -333,10 +364,37 @@ export async function deleteLeaveRequest(id: number): Promise<void> {
 }
 
 /** Return approved/pending leave requests in a date range as block objects. */
+/** Every page of a leave listing. The endpoint pages at 20 by default, 100 at most. */
+async function getAllLeaveRequests(params: LeaveListParams): Promise<LeaveRequest[]> {
+  const MAX_PAGES = 50; // 5,000 requests — far past any real week or month
+  const all: LeaveRequest[] = [];
+  let page = 1;
+  let pages = 1;
+  do {
+    const res = await getLeaveRequests({ ...params, page, limit: 100 });
+    all.push(...res.requests);
+    pages = Math.max(1, res.pages ?? 1);
+    page += 1;
+  } while (page <= pages && page <= MAX_PAGES);
+  return all;
+}
+
 export async function getLeaveBlocks(dateFrom: string, dateTo: string): Promise<LeaveBlock[]> {
-  const res = await getLeaveRequests({ dateFrom, dateTo });
-  return res.requests
-    .filter((r) => r.status !== 'rejected')
+  // Two things used to hide real leave from the planner while the weekly PDF,
+  // which queries the table directly, still printed it:
+  //  - only the first page (20 requests company-wide) was ever read;
+  //  - archived requests were left out, and HR archives approved ones too.
+  const [open, archived] = await Promise.all([
+    getAllLeaveRequests({ dateFrom, dateTo }),
+    getAllLeaveRequests({ dateFrom, dateTo, archived: true }),
+  ]);
+  const requests = Array.from(new Map([...open, ...archived].map((r) => [r.id, r])).values());
+
+  return requests
+    // Pending requests stay (the planner shows them as pending); withdrawn and
+    // refused ones are not leave at all. Only 'rejected' used to be dropped, so a
+    // cancelled or manager-rejected request still sat on the calendar.
+    .filter((r) => !isLeaveWithdrawnOrRefused(r))
     .map((r) => ({
       id:          r.id,
       companyId:   r.companyId,
@@ -351,6 +409,7 @@ export async function getLeaveBlocks(dateFrom: string, dateTo: string): Promise<
       startDate:   r.startDate,
       endDate:     r.endDate,
       status:      r.status,
+      currentApproverRole: r.currentApproverRole ?? null,
     }));
 }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, Moon, Palmtree, Thermometer, Store } from 'lucide-react';
 import { Shift } from '../../api/shifts';
-import { LeaveBlock } from '../../api/leave';
+import { LeaveBlock, isLeaveGranted } from '../../api/leave';
 import { TransferAssignment } from '../../api/transfers';
 import { WindowDisplayActivity } from '../../api/windowDisplay';
 import { getAvatarUrl } from '../../api/client';
@@ -500,8 +500,7 @@ export default function WeeklyCalendar({
                     .filter((item) => activityStoreIds.has(item.storeId));
                   const transferVm = transferVisualMeta(transfer?.status ?? 'active');
                   const lvVacation = leave?.leaveType === 'vacation';
-                  const statusLower = String(leave?.status || '').toLowerCase();
-                  const lvApproved = statusLower.includes('approved');
+                  const lvApproved = leave ? isLeaveGranted(leave) : false;
                   const lvPending = leave ? !lvApproved : false;
                   const leaveHoverKey = `${userId}-${dateStr}-leave`;
                   const isLeaveHovered = hoveredLeaveKey === leaveHoverKey;
