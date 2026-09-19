@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import client from '../../api/client';
 import { persistDailyAttendanceState } from '../../utils/indexedDB';
 import { getStore } from '../../api/stores';
+import { clearPendingScan } from '../../utils/pendingScan';
 
 // ── JWT decoder helper ──────────────────────────────────────────────────────
 function parseQrToken(token: string): { companyId: number; storeId: number; nonce: string; exp: number } | null {
@@ -176,6 +177,9 @@ export default function ScanPage() {
 
   useEffect(() => {
     if (!token) return;
+
+    // The scan page was reached, so the post-login safety net is no longer needed.
+    clearPendingScan();
 
     // Save token to localStorage for attendance module bypass use
     localStorage.setItem('scanned_qr_token', token);

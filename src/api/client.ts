@@ -14,6 +14,8 @@ if (apiBase && !apiBase.startsWith('http://') && !apiBase.startsWith('https://')
   }
 }
 const BASE_URL = apiBase ? `${apiBase}/api` : '/api';
+/** Relative or absolute `/api` base, for requests that must bypass the shared client. */
+export const API_BASE_URL = BASE_URL;
 
 /** Absolute API base URL — usable in feed URLs shared with external services. */
 export function getApiBaseUrl(): string {

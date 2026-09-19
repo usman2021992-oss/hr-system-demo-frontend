@@ -11,18 +11,7 @@ import { Alert } from '../../components/ui/Alert';
 import { Spinner } from '../../components/ui/Spinner';
 import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
-
-/** Returns a safe in-app path from `?next=` or null (blocks open redirects). */
-function safeNextPath(raw: string | null): string | null {
-  if (!raw) return null;
-  try {
-    const decoded = decodeURIComponent(raw);
-    if (!decoded.startsWith('/') || decoded.startsWith('//')) return null;
-    return decoded;
-  } catch {
-    return null;
-  }
-}
+import { safeNextPath } from '../../utils/safeNextPath';
 
 export default function DeviceRegistrationPage() {
   const { t } = useTranslation();

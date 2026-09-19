@@ -1,8 +1,42 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import type { InternalAxiosRequestConfig } from 'axios';
 import apiClient from '../api/client';
 import { login as apiLogin, logout as apiLogout } from '../api/auth';
 import { User, PermissionMap } from '../types';
 import { useToast } from './ToastContext';
+import {
+  getStoredToken,
+  getStoredRefreshToken,
+  storeSession,
+  clearSession,
+  refreshSession,
+  secondsUntilExpiry,
+} from '../api/session';
+
+export { resolveStoredToken } from '../api/session';
+
+// Renew the access token this long before it runs out, while the app is open.
+const PROACTIVE_REFRESH_SECONDS = 10 * 60;
+
+// Requests whose 401 is an answer about credentials, not an expired session.
+function isAuthEndpoint(url: string): boolean {
+  return url.includes('/auth/login') || url.includes('/auth/refresh') || url.includes('/auth/logout');
+}
+
+let redirectingToLogin = false;
+
+/**
+ * Full reload to the login page, carrying the current page in ?next= so the
+ * user comes back to it (a scanned QR above all). A reload rather than a
+ * router navigation so no screen keeps stale data from the ended session.
+ */
+function redirectToLogin(withNext: boolean): void {
+  if (redirectingToLogin) return;
+  redirectingToLogin = true;
+  const { pathname, search } = window.location;
+  const next = withNext && pathname !== '/login' ? `?next=${encodeURIComponent(pathname + search)}` : '';
+  window.location.href = `/login${next}`;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -18,22 +52,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const TOKEN_KEY = 'hr_token';
-
-function decodeJwtIat(token: string): number | null {
-  try {
-    const payloadPart = token.split('.')[1];
-    if (!payloadPart) return null;
-    // JWT payload is usually base64url; atob expects base64 with padding.
-    const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-    const decoded = JSON.parse(window.atob(padded)) as { iat?: number };
-    return Number.isFinite(decoded.iat) ? Number(decoded.iat) : null;
-  } catch {
-    return null;
-  }
-}
-
 interface EffectivePermissionsResponse {
   role: string;
   isSuperAdmin: boolean;
@@ -47,45 +65,6 @@ interface EffectivePermissionsResponse {
 // match the keys used in Sidebar, ProtectedRoute, and permissionCatalog.
 function camelToSnake(s: string): string {
   return s.replace(/([A-Z])/g, (c) => `_${c.toLowerCase()}`);
-}
-
-export function resolveStoredToken(localToken: string | null, sessionToken: string | null): string | null {
-  if (!localToken && !sessionToken) return null;
-  if (localToken && !sessionToken) return localToken;
-  if (!localToken && sessionToken) return sessionToken;
-
-  const localIat = decodeJwtIat(localToken!);
-  const sessionIat = decodeJwtIat(sessionToken!);
-
-  // Prefer the token with a valid iat when only one is parseable.
-  if (localIat !== null && sessionIat === null) return localToken;
-  if (localIat === null && sessionIat !== null) return sessionToken;
-
-  // If both invalid/unparseable, keep localStorage precedence for remember-me continuity.
-  if (localIat === null && sessionIat === null) return localToken;
-
-  // Both parseable: choose the newest token.
-  if (sessionIat! >= localIat!) return sessionToken;
-  return localToken;
-}
-
-function getStoredToken(): string | null {
-  const localToken = localStorage.getItem(TOKEN_KEY);
-  const sessionToken = sessionStorage.getItem(TOKEN_KEY);
-
-  const resolved = resolveStoredToken(localToken, sessionToken);
-  if (!resolved) return null;
-
-  // Normalize to a single authoritative storage when both exist.
-  if (localToken && sessionToken) {
-    if (resolved === sessionToken) {
-      localStorage.removeItem(TOKEN_KEY);
-    } else {
-      sessionStorage.removeItem(TOKEN_KEY);
-    }
-  }
-
-  return resolved;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -122,27 +101,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return config;
     });
 
+    const endSession = (errorCode: string | null) => {
+      clearSession();
+      delete apiClient.defaults.headers.common['Authorization'];
+      if (errorCode === 'COMPANY_ACCESS_EXPIRED') {
+        localStorage.setItem('login_error_code', 'COMPANY_ACCESS_EXPIRED');
+      }
+      setUser(null);
+      setPermissions({});
+      setAllowedCompanyIds([]);
+      setTargetCompanyId(null);
+      // No point coming back to a page of a company whose access has ended.
+      redirectToLogin(errorCode !== 'COMPANY_ACCESS_EXPIRED');
+    };
+
     const resInterceptor = apiClient.interceptors.response.use(
       (res) => res,
-      (error) => {
-        // Skip redirect if the error came from the login endpoint itself
-        // (wrong credentials returns 401 — we want the catch block to handle that)
-        const requestUrl = (error.config?.url ?? '') as string;
-        const isLoginRequest = requestUrl.includes('/auth/login');
-        const code = error.response?.data?.code;
-        const isExpired = error.response?.status === 403 && code === 'COMPANY_ACCESS_EXPIRED';
-        if ((error.response?.status === 401 || isExpired) && !isLoginRequest) {
-          localStorage.removeItem(TOKEN_KEY);
-          sessionStorage.removeItem(TOKEN_KEY);
-          if (isExpired) {
-            localStorage.setItem('login_error_code', 'COMPANY_ACCESS_EXPIRED');
-          }
-          setUser(null);
-          setPermissions({});
-          setAllowedCompanyIds([]);
-          setTargetCompanyId(null);
-          window.location.href = '/login';
+      async (error) => {
+        const config = error.config as (InternalAxiosRequestConfig & { _authRetried?: boolean }) | undefined;
+        const requestUrl = (config?.url ?? '') as string;
+        const status = error.response?.status;
+        const code = (error.response?.data?.code ?? null) as string | null;
+
+        // Wrong credentials on login (or a wrong current password) is the
+        // caller's to show, not a sign the session has ended.
+        if (isAuthEndpoint(requestUrl) || code === 'INVALID_CURRENT_PASSWORD') {
+          return Promise.reject(error);
         }
+
+        if (status === 403 && code === 'COMPANY_ACCESS_EXPIRED') {
+          endSession(code);
+          return Promise.reject(error);
+        }
+
+        if (status !== 401) return Promise.reject(error);
+
+        // The access token ran out: renew it silently and replay the request once.
+        if (config && !config._authRetried && getStoredRefreshToken()) {
+          config._authRetried = true;
+          const result = await refreshSession();
+          if (result.status === 'ok') {
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${result.token}`;
+            if (config.headers) config.headers.Authorization = `Bearer ${result.token}`;
+            return apiClient(config);
+          }
+          if (result.status === 'unavailable') {
+            // Couldn't reach the server — the session may be fine; let this
+            // request fail and try again on the next one.
+            return Promise.reject(error);
+          }
+          endSession(result.code);
+          return Promise.reject(error);
+        }
+
+        endSession(null);
         return Promise.reject(error);
       }
     );
@@ -166,20 +178,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore session on mount
   useEffect(() => {
-    const token = getStoredToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    // Set header directly — don't rely on interceptor ordering
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    const restore = async (): Promise<[User, EffectivePermissionsResponse] | null> => {
+      let token = getStoredToken();
+      if (!token && !getStoredRefreshToken()) return null;
 
-    // Verify token and load permissions
-    Promise.all([
-      apiClient.get('/auth/me').then((r) => r.data.data as User),
-      apiClient.get('/permissions/effective').then((r) => r.data.data as EffectivePermissionsResponse),
-    ])
-      .then(([userData, effective]) => {
+      // An expired access token (a phone left idle through a shift) is renewed
+      // before the first request, so opening a page never bounces to /login.
+      const left = secondsUntilExpiry(token);
+      if ((!token || (left !== null && left < 60)) && getStoredRefreshToken()) {
+        const result = await refreshSession();
+        if (result.status === 'ok') token = result.token;
+        else if (result.status === 'rejected') {
+          clearSession();
+          if (result.code === 'COMPANY_ACCESS_EXPIRED') {
+            localStorage.setItem('login_error_code', 'COMPANY_ACCESS_EXPIRED');
+          }
+          return null;
+        } else if (!token || (left !== null && left <= 0)) {
+          // Server unreachable and the access token is already dead: keep the
+          // stored session for the next attempt instead of logging out.
+          throw new Error('SESSION_CHECK_UNAVAILABLE');
+        }
+      }
+      if (!token) return null;
+
+      // Set header directly — don't rely on interceptor ordering
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // Verify token and load permissions
+      return Promise.all([
+        apiClient.get('/auth/me').then((r) => r.data.data as User),
+        apiClient.get('/permissions/effective').then((r) => r.data.data as EffectivePermissionsResponse),
+      ]);
+    };
+
+    restore()
+      .then((loaded) => {
+        if (!loaded) return;
+        const [userData, effective] = loaded;
         setUser(normalizeUser(userData));
         setPermissions(mapEffectiveToPermissionMap(effective));
         setAllowedCompanyIds(effective.allowedCompanyIds ?? []);
@@ -192,8 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // dropped connection) silently logs the user out of a session that is
         // still perfectly valid, and they cannot get back in by logging in again.
         if (status === 401) {
-          localStorage.removeItem(TOKEN_KEY);
-          sessionStorage.removeItem(TOKEN_KEY);
+          clearSession();
           delete apiClient.defaults.headers.common['Authorization'];
         }
         setAllowedCompanyIds([]);
@@ -211,15 +246,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string, rememberMe = false) => {
-    const { token, user: userData } = await apiLogin(email, password, rememberMe);
+    const { token, refreshToken, user: userData } = await apiLogin(email, password, rememberMe);
     // Keep a single authoritative token location to avoid cross-tab/account confusion.
-    localStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(TOKEN_KEY);
-    if (rememberMe) {
-      localStorage.setItem(TOKEN_KEY, token);
-    } else {
-      sessionStorage.setItem(TOKEN_KEY, token);
-    }
+    storeSession(token, refreshToken, rememberMe);
+    redirectingToLogin = false;
     // Set header immediately before fetching permissions
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     const effective = await apiClient.get('/permissions/effective').then((r) => r.data.data as EffectivePermissionsResponse);
@@ -230,9 +260,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    try { await apiLogout(); } catch { /* ignore */ }
-    localStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(TOKEN_KEY);
+    try { await apiLogout(getStoredRefreshToken()); } catch { /* ignore */ }
+    clearSession();
     delete apiClient.defaults.headers.common['Authorization'];
     setUser(null);
     setPermissions({});
@@ -243,6 +272,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshPermissions = async () => {
     await fetchEffectivePermissions();
   };
+
+  // Renew the access token shortly before it runs out while the app is in use,
+  // and as soon as a tab left in the background comes back — so requests rarely
+  // meet an expired token at all (the 401 handler above is the fallback).
+  useEffect(() => {
+    if (!user) return;
+    const renewIfDue = () => {
+      if (document.visibilityState === 'hidden' || !getStoredRefreshToken()) return;
+      const left = secondsUntilExpiry(getStoredToken());
+      if (left === null || left > PROACTIVE_REFRESH_SECONDS) return;
+      void refreshSession().then((result) => {
+        if (result.status === 'ok') {
+          apiClient.defaults.headers.common['Authorization'] = `Bearer ${result.token}`;
+        }
+      });
+    };
+    renewIfDue();
+    document.addEventListener('visibilitychange', renewIfDue);
+    const timer = setInterval(renewIfDue, 60 * 1000);
+    return () => {
+      document.removeEventListener('visibilitychange', renewIfDue);
+      clearInterval(timer);
+    };
+  }, [user?.id]);
 
   // Re-fetch permissions when the window regains focus (picks up admin changes to roles),
   // when another tab broadcasts a permission update, and every 5 minutes as a fallback.

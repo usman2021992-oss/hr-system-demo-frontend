@@ -6,6 +6,8 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { Alert } from '../../components/ui/Alert';
 import { Spinner } from '../../components/ui/Spinner';
 import { translateApiError } from '../../utils/apiErrors';
+import { safeNextPath } from '../../utils/safeNextPath';
+import { pendingScanPath } from '../../utils/pendingScan';
 import fusaroLogoUrl from '../../assets/fusaro-logo-2.png';
 
 /* ─── self-contained language pill — zero CSS-var dependency ─── */
@@ -157,8 +159,14 @@ const LoginPage: React.FC = () => {
   const { t } = useTranslation();
   const { isMobile } = useBreakpoint();
 
+  // Where to go after login: ?next= (survives the full reload done when a
+  // session expires), then the router state set by ProtectedRoute, then a QR
+  // scan interrupted by the login that is still valid, then home.
   const from = (location.state as { from?: { pathname: string; search: string } } | null)?.from;
-  const returnTo = from ? `${from.pathname}${from.search}` : '/';
+  const explicitReturn =
+    safeNextPath(new URLSearchParams(location.search).get('next')) ??
+    (from ? `${from.pathname}${from.search}` : null);
+  const resolveReturnTo = () => explicitReturn ?? pendingScanPath() ?? '/';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -177,8 +185,9 @@ const LoginPage: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    if (!loading && user !== null) navigate(returnTo, { replace: true });
-  }, [user, loading, navigate, returnTo]);
+    if (!loading && user !== null) navigate(resolveReturnTo(), { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading, navigate, explicitReturn]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -188,7 +197,7 @@ const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       await login(email, password, rememberMe);
-      navigate(returnTo, { replace: true });
+      navigate(resolveReturnTo(), { replace: true });
     } catch (err: unknown) {
       setErrorMessage(translateApiError(err, t));
     } finally {

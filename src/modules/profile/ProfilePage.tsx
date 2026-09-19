@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/ui';
 import { changePassword } from '../../api/auth';
-import { getEmployee, uploadEmployeeAvatar } from '../../api/employees';
+import { getEmployee, uploadEmployeeAvatar, deleteEmployeeAvatar } from '../../api/employees';
+import ProfileAvatar from '../../components/avatar/ProfileAvatar';
 import { getAvatarUrl } from '../../api/client';
 import { translateApiError } from '../../utils/apiErrors';
 import { useToast } from '../../context/ToastContext';
@@ -186,24 +187,39 @@ export function ProfilePage() {
     }
   }
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!canEditAvatar) return;
+  // Refresh both local employee state (for this page) and global user state (sidebar/header)
+  const reloadAfterAvatarChange = async () => {
+    const [refreshed] = await Promise.all([getEmployee(user.id), refreshUser()]);
+    setEmployee(refreshed);
+  };
 
+  // Rejects on failure so the photo editor stays open for another try.
+  const handleAvatarUpload = async (file: File) => {
+    if (!canEditAvatar) return;
     setAvatarUploading(true);
     try {
       await uploadEmployeeAvatar(user.id, file);
       showToast(t('employees.avatarSuccess'), 'success');
-      // Refresh both local employee state (for this page) and global user state (sidebar/header)
-      const [refreshed] = await Promise.all([getEmployee(user.id), refreshUser()]);
-      setEmployee(refreshed);
-
-      const input = document.getElementById('profile-avatar-upload') as HTMLInputElement | null;
-      if (input) input.value = '';
+      await reloadAfterAvatarChange().catch(() => undefined);
     } catch (err: unknown) {
       const message = translateApiError(err, t, t('employees.avatarError')) ?? t('employees.avatarError');
       showToast(message, 'error');
+      throw err;
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!canEditAvatar) return;
+    setAvatarUploading(true);
+    try {
+      await deleteEmployeeAvatar(user.id);
+      showToast(t('employees.avatarRemoved'), 'success');
+      await reloadAfterAvatarChange().catch(() => undefined);
+    } catch (err: unknown) {
+      showToast(translateApiError(err, t, t('employees.avatarRemoveError')) ?? t('employees.avatarRemoveError'), 'error');
+      throw err;
     } finally {
       setAvatarUploading(false);
     }
@@ -233,81 +249,25 @@ export function ProfilePage() {
       {canEditAvatar && (
         <Card title={t('employees.changeAvatar')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: '12px 0' }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                background: (employee?.avatarFilename ?? user.avatarFilename) ? 'transparent' : avatarBg,
-                border: '3px solid rgba(201,151,58,0.40)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                fontWeight: 700,
-                color: '#fff',
-                fontFamily: 'var(--font-display)',
-                letterSpacing: '0.04em',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.24)',
-                overflow: 'hidden',
-              }}>
-                {(employee?.avatarFilename ?? user.avatarFilename) ? (
-                  <img
-                    src={getAvatarUrl(employee?.avatarFilename ?? user.avatarFilename) ?? ''}
-                    alt={fullName}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  initials
-                )}
-              </div>
-
-              <input
-                id="profile-avatar-upload"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                style={{ display: 'none' }}
-                onChange={handleAvatarUpload}
-                disabled={avatarUploading || avatarLoading}
-              />
-
-              <label
-                htmlFor="profile-avatar-upload"
-                title={t('employees.changeAvatar')}
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  background: 'var(--accent)',
-                  border: '2px solid var(--primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: avatarUploading || avatarLoading ? 'not-allowed' : 'pointer',
-                  opacity: avatarUploading || avatarLoading ? 0.7 : 1,
-                }}
-              >
-                {avatarUploading || avatarLoading ? (
-                  <Spinner size="sm" />
-                ) : (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                )}
-              </label>
-            </div>
+            <ProfileAvatar
+              src={getAvatarUrl(employee?.avatarFilename ?? user.avatarFilename)}
+              name={fullName}
+              initials={initials}
+              fallbackBg={avatarBg}
+              caption={tRole(user.role)}
+              size={72}
+              editable
+              busy={avatarUploading || avatarLoading}
+              onUpload={handleAvatarUpload}
+              onRemove={handleAvatarRemove}
+            />
 
             <div style={{ minWidth: 180 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
                 {t('employees.uploadAvatar')}
               </div>
               <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-muted)' }}>
-                {avatarUploading ? t('employees.avatarUploading') : avatarLoading ? t('common.loading') : ''}
+                {avatarUploading ? t('employees.avatarUploading') : avatarLoading ? t('common.loading') : t('employees.avatarEditor.subtitle')}
               </div>
             </div>
           </div>
