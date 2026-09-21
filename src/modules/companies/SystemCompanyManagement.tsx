@@ -7,7 +7,8 @@ import { formatMoney } from '../../constants/currencies';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ReactCountryFlag from 'react-country-flag';
-import { ArrowRight, Building2, Users, Store, Plus, Layers, Smartphone, HardDrive, CalendarClock, Search, CreditCard, Receipt } from 'lucide-react';
+import { ArrowRight, Building2, Users, Store, Plus, Layers, Smartphone, HardDrive, CalendarClock, Search, CreditCard, Receipt, AlertTriangle } from 'lucide-react';
+import billingApi from '../../api/billing';
 import { useToast } from '../../context/ToastContext';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useAuth } from '../../context/AuthContext';
@@ -318,12 +319,107 @@ function TimezoneOption({ timezone }: { timezone: string }) {
   );
 }
 
+/**
+ * A red or amber flag beside a company that owes money.
+ *
+ * Only ever rendered for the states that need somebody to act - a paid-up
+ * company gets no badge at all, because a list where every row is decorated is
+ * a list where nothing stands out.
+ */
+const BillingStatusBadge: React.FC<{
+  status?: { subscriptionStatus: string | null; gracePeriodEndsAt: string | null };
+}> = ({ status }) => {
+  const { t } = useTranslation();
+  if (!status?.subscriptionStatus) return null;
+
+  const s = status.subscriptionStatus;
+  if (s !== 'past_due' && s !== 'unpaid') return null;
+
+  const blocked = s === 'unpaid';
+  const deadline = status.gracePeriodEndsAt
+    ? new Date(status.gracePeriodEndsAt).toLocaleDateString('it-IT')
+    : null;
+
+  return (
+    <span
+      title={
+        blocked
+          ? t('companies.billingBlockedHint', 'Accesso sospeso: il pagamento non è stato regolarizzato.')
+          : deadline
+            ? t('companies.billingPastDueHint', 'Pagamento in sospeso. Accesso sospeso dal {{date}}.', {
+                date: deadline,
+              })
+            : t('companies.billingPastDueHintNoDate', 'Pagamento in sospeso.')
+      }
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        flexShrink: 0,
+        padding: '2px 8px',
+        borderRadius: 999,
+        fontSize: 10.5,
+        fontWeight: 700,
+        letterSpacing: '0.02em',
+        textTransform: 'uppercase',
+        color: blocked ? '#991b1b' : '#92400e',
+        background: blocked ? 'rgba(220,38,38,0.12)' : 'rgba(245,158,11,0.15)',
+        border: `1px solid ${blocked ? 'rgba(220,38,38,0.35)' : 'rgba(245,158,11,0.40)'}`,
+      }}
+    >
+      <AlertTriangle size={10} />
+      {blocked
+        ? t('companies.billingBlocked', 'Accesso sospeso')
+        : t('companies.billingPastDue', 'Pagamento in sospeso')}
+    </span>
+  );
+};
+
 export default function SystemCompanyManagement() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { isMobile } = useBreakpoint();
   const { user } = useAuth();
+
+  /**
+   * Billing standing per company, for the badge in the list.
+   *
+   * Read from the super-admin billing overview rather than joined into the
+   * companies query: that endpoint already returns exactly this, already
+   * checks the same permission, and a failure here must cost a badge rather
+   * than the page.
+   */
+  const [billingByCompany, setBillingByCompany] = useState<
+    Map<number, { subscriptionStatus: string | null; gracePeriodEndsAt: string | null }>
+  >(new Map());
+
+  useEffect(() => {
+    if (!user?.isSuperAdmin) return;
+    let cancelled = false;
+    billingApi
+      .getSuperAdminOverview()
+      .then((rows) => {
+        if (cancelled) return;
+        setBillingByCompany(
+          new Map(
+            rows.map((r) => [
+              r.id,
+              {
+                subscriptionStatus: r.subscriptionStatus ?? null,
+                gracePeriodEndsAt: r.gracePeriodEndsAt ?? null,
+              },
+            ])
+          )
+        );
+      })
+      .catch(() => {
+        // No badges rather than no company list.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.isSuperAdmin]);
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [search, setSearch] = useState('');
@@ -980,6 +1076,10 @@ export default function SystemCompanyManagement() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em', display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: '100%' }}>
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                      {/* A company whose payment is outstanding, visible from
+                          the list. Finding these by opening each company in
+                          turn is how one gets missed until its access stops. */}
+                      <BillingStatusBadge status={billingByCompany.get(c.id)} />
                       {c.country ? (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
                           <ReactCountryFlag countryCode={c.country} svg style={{ width: '0.9em', height: '0.9em' }} />

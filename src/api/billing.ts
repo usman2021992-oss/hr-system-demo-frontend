@@ -10,6 +10,7 @@ import {
   BillingTestNoticeResult,
   NoticeRecipients,
   StripeTaxRateOption,
+  BillingResetPreview,
 } from '../types';
 
 export type { NoticeRecipients };
@@ -200,6 +201,36 @@ export const billingApi = {
     const params: Record<string, any> = { limit };
     if (companyId) params.companyId = companyId;
     const { data } = await apiClient.get('/billing/headcount-history', { params });
+    return data;
+  },
+
+  /**
+   * What clearing this company's billing history would remove. Read before the
+   * action is offered: a count is the only way to notice you are about to
+   * clear the wrong company.
+   */
+  previewBillingReset: async (companyId: number): Promise<BillingResetPreview> => {
+    const { data } = await apiClient.get(`/billing/admin/companies/${companyId}/reset-preview`);
+    return data;
+  },
+
+  /**
+   * Clears it. The company's own name is required by the server, not just by
+   * the UI, so the guard survives anyone calling the endpoint directly.
+   */
+  resetBillingData: async (
+    companyId: number,
+    confirm: string
+  ): Promise<{
+    companyId: number;
+    companyName: string;
+    deletedSubscriptions: number;
+    deletedTransactions: number;
+    deletedHeadcountEvents: number;
+  }> => {
+    const { data } = await apiClient.post(`/billing/admin/companies/${companyId}/reset`, {
+      confirm,
+    });
     return data;
   },
 

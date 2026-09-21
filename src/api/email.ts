@@ -51,6 +51,11 @@ export interface PlatformSmtpConfig {
   smtpFrom: string;
   /** Comma-separated addresses copied on every failed payment. */
   billingAlertEmail: string;
+  /** What the customer sees in their inbox: header, and the legal footer. */
+  brandName: string;
+  logoUrl: string;
+  supplierName: string;
+  supplierDetails: string;
   /** The password is never sent to the browser; this says whether one exists. */
   hasPassword: boolean;
   /** Host, user and password all present - enough to attempt a send. */
@@ -70,6 +75,10 @@ export interface PlatformSmtpInput {
   smtpPass: string;
   smtpFrom: string;
   billingAlertEmail: string;
+  brandName: string;
+  logoUrl: string;
+  supplierName: string;
+  supplierDetails: string;
 }
 
 export async function getPlatformEmailConfig(): Promise<PlatformSmtpConfig> {

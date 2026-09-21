@@ -507,6 +507,30 @@ export interface StripeTaxRateOption {
   jurisdiction: string | null;
 }
 
+/**
+ * What a billing reset would remove for one company.
+ *
+ * `activeSubscriptions` is the part that needs reading rather than counting:
+ * a subscription still live under the *current* credentials will carry on
+ * charging after its record here is deleted, so it has to be cancelled at the
+ * provider first.
+ */
+export interface BillingResetPreview {
+  companyId: number;
+  companyName: string;
+  subscriptions: number;
+  transactions: number;
+  headcountEvents: number;
+  activeSubscriptions: Array<{
+    id: number;
+    provider: string;
+    status: string;
+    providerSubscriptionId: string | null;
+    /** Opened under credentials no longer in use, so unreachable anyway. */
+    foreignAccount: boolean;
+  }>;
+}
+
 /** Where a failed-payment warning went, and whether it arrived. */
 export interface BillingNoticeDelivery {
   emailTo: string | null;

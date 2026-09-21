@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { BillingResetPanel } from './BillingResetPanel';
 
 interface Props {
   company: Company;
@@ -278,6 +279,10 @@ export const CompanyBillingConfigModal: React.FC<Props> = ({
             />
           </div>
         </div>
+
+        {/* Only shown when there is something to clear, and only to a super
+            admin - the endpoint enforces that too. */}
+        <BillingResetPanel companyId={company.id} companyName={company.name} />
       </div>
     </Modal>
   );
