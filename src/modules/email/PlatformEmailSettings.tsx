@@ -66,6 +66,10 @@ export const PlatformEmailSettings: React.FC = () => {
     smtpPass: '',
     smtpFrom: '',
     billingAlertEmail: '',
+    brandName: 'Veylo HR',
+    logoUrl: '',
+    supplierName: '',
+    supplierDetails: '',
   });
 
   const [testTo, setTestTo] = useState('');
@@ -90,6 +94,10 @@ export const PlatformEmailSettings: React.FC = () => {
       smtpPass: '',
       smtpFrom: cfg.smtpFrom || '',
       billingAlertEmail: cfg.billingAlertEmail || '',
+      brandName: cfg.brandName || 'Veylo HR',
+      logoUrl: cfg.logoUrl || '',
+      supplierName: cfg.supplierName || '',
+      supplierDetails: cfg.supplierDetails || '',
     });
   };
 
@@ -382,6 +390,88 @@ export const PlatformEmailSettings: React.FC = () => {
             </Button>
           </div>
         </form>
+      </section>
+
+      {/* What the customer sees in the message itself, as opposed to how it is
+          delivered. Separate panel because it is filled in once, by a
+          different person, from details that arrive later. */}
+      <section style={panel}>
+        <h3 style={{ margin: '0 0 6px', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700 }}>
+          {t('email.brandTitle', 'Intestazione e piè di pagina delle email')}
+        </h3>
+        <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+          {t(
+            'email.brandHelp',
+            'Usati in tutte le email di fatturazione: promemoria di rinnovo, avviso di pagamento non riuscito e messaggi di prova. Il nome viene mostrato anche come testo, così resta leggibile se il client di posta blocca le immagini.'
+          )}
+        </p>
+
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div style={twoCol}>
+            <Input
+              label={t('email.brandName', 'Nome visualizzato')}
+              placeholder="Veylo HR"
+              value={form.brandName}
+              onChange={(e) => setForm({ ...form, brandName: e.target.value })}
+            />
+            <Input
+              label={t('email.brandLogoUrl', 'URL del logo (https)')}
+              placeholder="https://veylohr.com/logo.png"
+              value={form.logoUrl}
+              onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+            />
+          </div>
+
+          <Input
+            label={t('email.brandSupplierName', 'Ragione sociale (piè di pagina)')}
+            placeholder="Veylo Srl"
+            value={form.supplierName}
+            onChange={(e) => setForm({ ...form, supplierName: e.target.value })}
+          />
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 6,
+                color: 'var(--text-primary)',
+              }}
+            >
+              {t('email.brandSupplierDetails', 'Dati di contatto (piè di pagina)')}
+            </label>
+            <textarea
+              rows={4}
+              value={form.supplierDetails}
+              onChange={(e) => setForm({ ...form, supplierDetails: e.target.value })}
+              placeholder={'Via Roma 1, 20121 Milano (MI)\nP.IVA 12345678901\nsupporto@veylohr.com · +39 02 1234567'}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--background)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                fontSize: 13,
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+            <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+              {t(
+                'email.brandSupplierDetailsHelp',
+                'Una riga per voce. Vengono mostrate così come sono scritte, in fondo a ogni email.'
+              )}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button type="button" onClick={(e) => handleSave(e as any)} loading={saving}>
+              {t('common.save', 'Salva')}
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* A real send. Verifying only proves the server accepts a login; it does
