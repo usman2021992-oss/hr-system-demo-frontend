@@ -110,7 +110,7 @@ export const BillingBlockedOverlay: React.FC = () => {
                 )
               : t(
                   'billing.required.description',
-                  'Per accedere alle funzionalità aziendali di VeylOHR è necessario attivare l’abbonamento mensile aziendale.'
+                  'Per accedere alle funzionalità aziendali di Veylo HR è necessario attivare l’abbonamento mensile aziendale.'
                 )}
           </p>
         </div>

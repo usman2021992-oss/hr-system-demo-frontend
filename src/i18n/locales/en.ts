@@ -1084,6 +1084,7 @@ const en = {
     billingResetConfirm: 'Remove permanently',
     billingResetDone: 'Billing data removed: {{subs}} subscriptions, {{tx}} transactions.',
     billingResetFailed: 'Could not remove the billing data',
+    billingResetUnavailable: 'Could not read this company’s billing data: {{error}}',
     statDevices: 'Terminals',
     statStorage: 'Storage',
     accessRange: 'Access period',
@@ -4244,7 +4245,7 @@ const en = {
     txAmount: 'Amount',
     txStatus: 'Status',
     txReceipt: 'Receipt',
-    subscriptionPayment: 'VeylOHR Monthly Platform Fee',
+    subscriptionPayment: 'Veylo HR Monthly Platform Fee',
     paid: 'Paid',
     failed: 'Failed',
     pending: 'Pending',
@@ -4263,7 +4264,7 @@ const en = {
     },
     required: {
       title: 'Subscription Required',
-      description: 'An active company subscription is required to access VeylOHR platform features.',
+      description: 'An active company subscription is required to access Veylo HR platform features.',
       action: 'Activate Subscription',
     },
     processing: {
@@ -4313,7 +4314,7 @@ const en = {
     superAdminConfigSubtitle: 'Select a company to view or configure its SMTP server for automated emails.',
     superAdminSelectTitle: 'Company SMTP management',
     superAdminSelectDesc: 'Select a company from the list to manage its dedicated email configuration.',
-    tabPlatform: 'Platform (VeylOHR)',
+    tabPlatform: 'Platform (Veylo HR)',
     tabCompanies: 'Companies',
     smtpHost: 'SMTP host',
     smtpPort: 'SMTP port',
@@ -4358,7 +4359,7 @@ const en = {
     // The "who receives what" diagram.
     platformFlowTitle: 'Who receives the warnings',
     platformFlowHelp: 'Pick a company to see exactly who would be warned if one of its payments failed.',
-    flowPlatform: 'VeylOHR platform',
+    flowPlatform: 'Veylo HR platform',
     flowNoSender: 'no sender configured',
     flowPurposeOwner: 'Failed-payment warning',
     flowPurposeCopy: 'Operator copy, to contact the customer',

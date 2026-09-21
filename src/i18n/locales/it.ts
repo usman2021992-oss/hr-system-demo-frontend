@@ -1078,6 +1078,7 @@ const it = {
     billingResetConfirm: 'Rimuovi definitivamente',
     billingResetDone: 'Dati di fatturazione rimossi: {{subs}} abbonamenti, {{tx}} transazioni.',
     billingResetFailed: 'Impossibile rimuovere i dati di fatturazione',
+    billingResetUnavailable: 'Impossibile leggere i dati di fatturazione di questa azienda: {{error}}',
     statDevices: 'Terminali',
     statStorage: 'Archiviazione',
     accessRange: 'Periodo di accesso',
@@ -4246,7 +4247,7 @@ const it = {
     txAmount: 'Importo',
     txStatus: 'Stato',
     txReceipt: 'Ricevuta',
-    subscriptionPayment: 'Canone mensile VeylOHR',
+    subscriptionPayment: 'Canone mensile Veylo HR',
     paid: 'Pagato',
     failed: 'Fallito',
     pending: 'In attesa',
@@ -4265,7 +4266,7 @@ const it = {
     },
     required: {
       title: 'Abbonamento richiesto',
-      description: 'Per accedere alle funzionalità aziendali di VeylOHR è necessario attivare l’abbonamento mensile aziendale.',
+      description: 'Per accedere alle funzionalità aziendali di Veylo HR è necessario attivare l’abbonamento mensile aziendale.',
       action: 'Attiva abbonamento',
     },
     processing: {
@@ -4316,7 +4317,7 @@ const it = {
     superAdminConfigSubtitle: 'Seleziona un’azienda per visualizzare o configurare il suo server SMTP per le email automatiche.',
     superAdminSelectTitle: 'Gestione SMTP Aziende',
     superAdminSelectDesc: 'Seleziona un’azienda dall’elenco per gestire la sua configurazione email dedicata.',
-    tabPlatform: 'Piattaforma (VeylOHR)',
+    tabPlatform: 'Piattaforma (Veylo HR)',
     tabCompanies: 'Aziende',
     smtpHost: 'Server SMTP (Host)',
     smtpPort: 'Porta SMTP',
@@ -4361,7 +4362,7 @@ const it = {
     // Diagramma "chi riceve cosa".
     platformFlowTitle: 'Chi riceve gli avvisi',
     platformFlowHelp: 'Seleziona un’azienda per vedere esattamente chi verrebbe avvisato se un suo pagamento non andasse a buon fine.',
-    flowPlatform: 'Piattaforma VeylOHR',
+    flowPlatform: 'Piattaforma Veylo HR',
     flowNoSender: 'nessun mittente configurato',
     flowPurposeOwner: 'Avviso di pagamento non riuscito',
     flowPurposeCopy: 'Copia al gestore, per contattare il cliente',

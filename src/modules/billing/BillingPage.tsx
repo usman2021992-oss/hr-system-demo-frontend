@@ -726,7 +726,7 @@ export const BillingPage: React.FC = () => {
             </div>
 
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-              VeylOHR Corporate Suite
+              Veylo HR Corporate Suite
             </h2>
             <p style={{ margin: '4px 0 18px', fontSize: 12, color: 'var(--text-muted)' }}>
               {company?.name || 'Azienda'}
