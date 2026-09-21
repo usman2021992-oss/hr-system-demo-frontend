@@ -334,6 +334,24 @@ input, select, textarea {
   }
 }
 
+/*
+ * The app shell's height.
+ *
+ * A mobile browser's `100vh` is the viewport *with the address bar hidden* -
+ * a height the page does not actually have while the bar is showing. Scroll,
+ * the bar collapses, the real viewport grows, and a shell pinned to 100vh with
+ * overflow:hidden jumps. Repeat on every scroll direction change and it reads
+ * as the screen flickering.
+ *
+ * `100dvh` is the same measurement taken live, which is what this wants. The
+ * plain `100vh` above it is the fallback for anything too old to know the
+ * unit - it keeps today's behaviour rather than collapsing to nothing.
+ */
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
 /* Sidebar mobile overlay */
 .sidebar-overlay {
   position: fixed;

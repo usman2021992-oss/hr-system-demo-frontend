@@ -177,6 +177,10 @@ export const BillingGraceBanner: React.FC = () => {
       style={{
         display: 'flex',
         alignItems: 'center',
+        // Wraps on a phone rather than crushing the message against the
+        // button: this is the one banner that has to stay readable, and the
+        // deadline in it is the whole point.
+        flexWrap: 'wrap',
         gap: 10,
         padding: '10px 16px',
         background: critical ? 'rgba(220,38,38,0.10)' : 'rgba(245,158,11,0.12)',
@@ -188,7 +192,7 @@ export const BillingGraceBanner: React.FC = () => {
         style={{ color: critical ? '#dc2626' : '#d97706', flexShrink: 0 }}
       />
 
-      <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-primary)' }}>
+      <div style={{ flex: 1, minWidth: 180, fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-primary)' }}>
         <strong>
           {left <= 0
             ? t('billing.graceLastDayTitle', 'Pagamento non riuscito: ultimo giorno')
