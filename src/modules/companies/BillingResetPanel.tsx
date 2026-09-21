@@ -30,16 +30,29 @@ export const BillingResetPanel: React.FC<{
   const { showToast } = useToast();
 
   const [preview, setPreview] = useState<BillingResetPreview | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [working, setWorking] = useState(false);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
       setPreview(await billingApi.previewBillingReset(companyId));
-    } catch {
-      // A panel that cannot count is a panel that should not offer to delete.
+      setLoadError(null);
+    } catch (err: any) {
+      // Hiding on an error was wrong. "Nothing to clear" and "we could not
+      // ask" look identical from the outside, and the second one sent someone
+      // hunting for a button that had quietly removed itself.
       setPreview(null);
+      setLoadError(
+        err?.response?.status === 403
+          ? 'forbidden'
+          : err?.response?.data?.error || 'unknown'
+      );
+    } finally {
+      setLoading(false);
     }
   }, [companyId]);
 
@@ -49,6 +62,34 @@ export const BillingResetPanel: React.FC<{
 
   const total =
     (preview?.subscriptions ?? 0) + (preview?.transactions ?? 0) + (preview?.headcountEvents ?? 0);
+
+  // Still asking. Nothing is shown rather than a box that appears and then
+  // disappears a moment later.
+  if (loading) return null;
+
+  // Only a super admin may clear billing data, and only a super admin should
+  // see that the option exists. Any other failure is worth saying out loud.
+  if (loadError === 'forbidden') return null;
+
+  if (loadError) {
+    return (
+      <div style={{ ...shell, borderColor: 'rgba(245,158,11,0.40)', background: 'rgba(245,158,11,0.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <AlertTriangle size={15} style={{ color: '#d97706' }} />
+          <strong style={{ fontSize: 14 }}>
+            {t('companies.billingResetTitle', 'Azzera i dati di fatturazione')}
+          </strong>
+        </div>
+        <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-secondary)' }}>
+          {t(
+            'companies.billingResetUnavailable',
+            'Impossibile leggere i dati di fatturazione di questa azienda: {{error}}',
+            { error: loadError }
+          )}
+        </p>
+      </div>
+    );
+  }
 
   // Nothing to clear is not an error, and an empty danger zone is just noise.
   if (!preview || total === 0) return null;
@@ -81,15 +122,7 @@ export const BillingResetPanel: React.FC<{
   };
 
   return (
-    <div
-      style={{
-        marginTop: 20,
-        padding: 16,
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid rgba(220,38,38,0.35)',
-        background: 'rgba(220,38,38,0.05)',
-      }}
-    >
+    <div style={shell}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
         <AlertTriangle size={15} style={{ color: '#dc2626' }} />
         <strong style={{ fontSize: 14, color: 'var(--text-primary)' }}>
@@ -193,3 +226,11 @@ export const BillingResetPanel: React.FC<{
 };
 
 export default BillingResetPanel;
+
+const shell: React.CSSProperties = {
+  marginTop: 20,
+  padding: 16,
+  borderRadius: 'var(--radius-md)',
+  border: '1px solid rgba(220,38,38,0.35)',
+  background: 'rgba(220,38,38,0.05)',
+};

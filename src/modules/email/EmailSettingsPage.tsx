@@ -42,7 +42,7 @@ export default function EmailSettingsPage() {
   /**
    * Two kinds of mailbox live on this page and they are not interchangeable.
    *
-   * 'platform' is VeylOHR's own: it sends billing warnings to a customer's
+   * 'platform' is Veylo HR's own: it sends billing warnings to a customer's
    * account owner and the copy to the operator. 'companies' is each tenant's,
    * sending that tenant's internal mail. Platform is the default tab because
    * it is the one that has to be filled in before the first real customer is
@@ -249,7 +249,7 @@ export default function EmailSettingsPage() {
             active={tab === 'platform'}
             onClick={() => setTab('platform')}
             icon={<Server size={15} />}
-            label={t('email.tabPlatform', 'Piattaforma (VeylOHR)')}
+            label={t('email.tabPlatform', 'Piattaforma (Veylo HR)')}
           />
           <TabButton
             active={tab === 'companies'}

@@ -35,7 +35,7 @@ import { smtpErrorSummary } from './smtpErrors';
  *
  * Every other email in this product is sent *as a company*, through that
  * company's SMTP server. Billing mail is not: "your subscription payment
- * failed, settle it by Friday" is VeylOHR writing to its customer. Routing
+ * failed, settle it by Friday" is Veylo HR writing to its customer. Routing
  * that through the customer's own mail server fails in exactly the case that
  * matters - a customer who never configured SMTP is a customer who never
  * receives the one warning that their service is about to stop - and it cannot
@@ -351,7 +351,7 @@ export const PlatformEmailSettings: React.FC = () => {
 
           <Input
             label={t('email.platformFrom', 'Mittente (From)')}
-            placeholder="es. VeylOHR <billing@veylo.it>"
+            placeholder="es. Veylo HR <billing@veylo.it>"
             value={form.smtpFrom}
             onChange={(e) => setForm({ ...form, smtpFrom: e.target.value })}
           />
@@ -544,7 +544,7 @@ export const PlatformEmailSettings: React.FC = () => {
           <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
             <FlowRow
               from={{
-                label: t('email.flowPlatform', 'Piattaforma VeylOHR'),
+                label: t('email.flowPlatform', 'Piattaforma Veylo HR'),
                 value:
                   recipients.platform.from ||
                   t('email.flowNoSender', 'nessun mittente configurato'),
@@ -564,7 +564,7 @@ export const PlatformEmailSettings: React.FC = () => {
 
             <FlowRow
               from={{
-                label: t('email.flowPlatform', 'Piattaforma VeylOHR'),
+                label: t('email.flowPlatform', 'Piattaforma Veylo HR'),
                 value:
                   recipients.platform.from ||
                   t('email.flowNoSender', 'nessun mittente configurato'),
