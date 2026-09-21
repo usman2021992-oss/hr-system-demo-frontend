@@ -71,6 +71,7 @@ export const NoticeDeliveryLine: React.FC<{
         alignItems: 'center',
         gap: 6,
         marginTop: 3,
+        flexWrap: 'wrap',
         fontSize: compact ? 11 : 12,
         color: 'var(--text-muted)',
       }}
@@ -101,12 +102,17 @@ export const NoticeDeliveryDetail: React.FC<{ notice?: BillingNoticeDelivery | n
 
   if (!notice) return null;
 
+  // These rows carry email addresses, which are long and unbreakable. On a
+  // phone they wrap under their label instead of pushing the receipt panel
+  // wider than the screen.
   const row: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
     padding: '5px 0',
     fontSize: 12,
+    wordBreak: 'break-word',
   };
 
   const when = notice.emailAt

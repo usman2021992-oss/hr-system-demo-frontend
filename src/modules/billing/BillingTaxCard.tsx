@@ -243,13 +243,19 @@ export const BillingTaxCard: React.FC<{
     </div>
   );
 
+  // Label on the left, value on the right - until the two no longer fit side
+  // by side, at which point the value drops beneath its label rather than a
+  // monospace tax-rate id forcing the whole card to scroll sideways.
   const row: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
     gap: 12,
     padding: '7px 0',
     fontSize: 12.5,
     borderBottom: '1px solid var(--border-light)',
+    wordBreak: 'break-word',
   };
 
   return (
@@ -660,6 +666,7 @@ export default BillingTaxCard;
 const exampleRow: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
+  flexWrap: 'wrap',
   gap: 12,
   padding: '3px 0',
   fontSize: 12.5,

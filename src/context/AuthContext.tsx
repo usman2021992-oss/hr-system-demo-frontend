@@ -309,7 +309,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener('focus', refresh);
     window.addEventListener('storage', handleStorageEvent);
-    const timer = setInterval(refresh, 10 * 1000);
+    // Five minutes, as the comment above always said - the code said ten
+    // seconds. Each poll replaces the permission map, the allowed-company list
+    // and the target company with fresh objects, so every screen reading this
+    // context re-rendered six times a minute for every signed-in user. It is
+    // only a fallback: a role change already arrives immediately through the
+    // focus and storage listeners above.
+    const timer = setInterval(refresh, 5 * 60 * 1000);
     return () => {
       window.removeEventListener('focus', refresh);
       window.removeEventListener('storage', handleStorageEvent);

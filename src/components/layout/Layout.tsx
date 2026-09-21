@@ -63,9 +63,11 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Dashboard' }) => {
     }
   };
 
+  // Height comes from the .app-shell class rather than from here: it needs a
+  // `100vh` fallback beneath a `100dvh` value, and one inline style property
+  // cannot carry both.
   const wrapperStyle: React.CSSProperties = {
     display: 'flex',
-    height: '100vh',
     overflow: 'hidden',
   };
 
@@ -92,7 +94,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Dashboard' }) => {
     // navigation to allow from it, and the banner below warns for as long as
     // the grace period runs.
     <BillingStatusProvider>
-      <div style={wrapperStyle}>
+      <div className="app-shell" style={wrapperStyle}>
         {mobileOpen && (
           <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />
         )}
