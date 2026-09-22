@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from 'react';
 import client from '../api/client';
+import { SESSION_STARTED_EVENT, getStoredToken, getStoredRefreshToken } from '../api/session';
 import { useToast } from './ToastContext';
 import { 
   getOfflineEvents, 
@@ -57,7 +58,19 @@ export function OfflineSyncProvider({ children }: { children: ReactNode }) {
 
   const drainQueue = useCallback(async () => {
     if (syncingRef.current || !navigator.onLine) return;
-    
+
+    // Without a session there is nothing to sync with, and asking anyway does
+    // real damage: /attendance/sync requires authentication, so it answers 401,
+    // and the axios interceptor reads any 401 as "this session has ended" and
+    // sends the browser to the login page.
+    //
+    // This queue lives in IndexedDB, which no logout clears, and it drains on
+    // every boot and every 30 seconds. One event left behind by an employee
+    // whose session has since expired was therefore enough to bounce the login
+    // page for as long as the event sat there. Nothing is lost by waiting: the
+    // events keep for 24 hours and drain on the next successful login.
+    if (!getStoredToken() && !getStoredRefreshToken()) return;
+
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
@@ -287,8 +300,13 @@ export function OfflineSyncProvider({ children }: { children: ReactNode }) {
       setIsOnline(false);
     };
 
+    // Logging in is the other moment a drain can suddenly become possible,
+    // and without this one the queue would sit until the 30s tick below.
+    const handleSessionStarted = () => { void drainQueue(); };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener(SESSION_STARTED_EVENT, handleSessionStarted);
     
     // Periodic check (every 30 seconds) in case 'online' event is missed
     const interval = setInterval(() => {
@@ -298,6 +316,7 @@ export function OfflineSyncProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener(SESSION_STARTED_EVENT, handleSessionStarted);
       clearInterval(interval);
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);

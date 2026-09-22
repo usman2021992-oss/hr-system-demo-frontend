@@ -5,6 +5,7 @@ import { login as apiLogin, logout as apiLogout } from '../api/auth';
 import { User, PermissionMap } from '../types';
 import { useToast } from './ToastContext';
 import {
+  SESSION_STARTED_EVENT,
   getStoredToken,
   getStoredRefreshToken,
   storeSession,
@@ -32,9 +33,22 @@ let redirectingToLogin = false;
  */
 function redirectToLogin(withNext: boolean): void {
   if (redirectingToLogin) return;
-  redirectingToLogin = true;
   const { pathname, search } = window.location;
-  const next = withNext && pathname !== '/login' ? `?next=${encodeURIComponent(pathname + search)}` : '';
+
+  // Already on the login page: there is nowhere to send anyone and no stale
+  // screen to clear, so there is nothing for a reload to achieve.
+  //
+  // It has to be a hard stop rather than a tidy-up. The guard above is a
+  // module variable, so a reload resets it - it cannot break a loop that
+  // passes through one. Anything that keeps answering 401 in the background
+  // (an offline attendance event waiting to sync, above all) would end the
+  // session again on the next boot, reload /login onto itself again, and go
+  // round for as long as the cause lasts. On a phone that reads as the page
+  // flickering, which is exactly what it was.
+  if (pathname === '/login') return;
+
+  redirectingToLogin = true;
+  const next = withNext ? `?next=${encodeURIComponent(pathname + search)}` : '';
   window.location.href = `/login${next}`;
 }
 
@@ -250,6 +264,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Keep a single authoritative token location to avoid cross-tab/account confusion.
     storeSession(token, refreshToken, rememberMe);
     redirectingToLogin = false;
+    // Anything that was waiting for a session can go now - an attendance event
+    // queued offline before this login, above all.
+    try { window.dispatchEvent(new Event(SESSION_STARTED_EVENT)); } catch { /* ignore */ }
     // Set header immediately before fetching permissions
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     const effective = await apiClient.get('/permissions/effective').then((r) => r.data.data as EffectivePermissionsResponse);

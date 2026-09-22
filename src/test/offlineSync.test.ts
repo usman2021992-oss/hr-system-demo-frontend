@@ -56,6 +56,10 @@ describe('useOfflineSync', () => {
     mockOfflineQueue = [];
     mockDailyState = null;
     mockPost.mockReset();
+    // Every case below is an employee who is logged in - the queue only ever
+    // holds events they created. Without this the drain now correctly refuses
+    // to run at all.
+    localStorage.setItem('hr_token', 'header.payload.signature');
     vi.useFakeTimers();
     // Default: online
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
@@ -63,6 +67,47 @@ describe('useOfflineSync', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  // ── The login-page flicker ──────────────────────────────────────────────────
+
+  it('does not sync while logged out, so a stale event cannot end the session', async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    mockOfflineQueue = [{
+      id: 1, event_type: 'checkin', user_id: 7, unique_id: 'u7',
+      event_time: new Date().toISOString(), client_uuid: 'uuid-1',
+    }];
+
+    renderHook(() => useOfflineSync(), { wrapper: TestWrapper });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    // /attendance/sync needs a token. Asking without one answers 401, which the
+    // axios interceptor reads as "the session ended" and turns into a reload of
+    // the login page - on every boot, for as long as the event is queued.
+    expect(mockPost).not.toHaveBeenCalled();
+    // ...and the event is kept, not dropped, for the next login.
+    expect(await getOfflineEvents()).toHaveLength(1);
+  });
+
+  it('syncs once a refresh token alone is present', async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    sessionStorage.setItem('hr_refresh_token', 'refresh-abc');
+    mockPost.mockResolvedValue({ data: { data: { synced: 1, failed: 0, syncedUuids: ['uuid-1'] } } });
+    mockOfflineQueue = [{
+      id: 1, event_type: 'checkin', user_id: 7, unique_id: 'u7',
+      event_time: new Date().toISOString(), client_uuid: 'uuid-1',
+    }];
+
+    renderHook(() => useOfflineSync(), { wrapper: TestWrapper });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    // An expired access token is still a session: the interceptor renews it and
+    // replays the request, so holding back here would strand the queue.
+    expect(mockPost).toHaveBeenCalledTimes(1);
   });
 
   // ── Enqueue ─────────────────────────────────────────────────────────────────

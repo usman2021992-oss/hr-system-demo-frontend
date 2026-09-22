@@ -11,6 +11,15 @@ import { API_BASE_URL } from './client';
  */
 
 export const TOKEN_KEY = 'hr_token';
+/**
+ * Fired on the window the moment a session starts existing.
+ *
+ * Work that is held back while logged out needs to know when to start, and
+ * an event keeps that from becoming a dependency: the offline attendance
+ * queue lives below the auth context in the tree but is mounted without it in
+ * its own tests, so it listens for this instead of reading the context.
+ */
+export const SESSION_STARTED_EVENT = 'hr:session-started';
 export const REFRESH_KEY = 'hr_refresh_token';
 
 function decodeJwtClaims(token: string): { iat?: number; exp?: number } | null {
