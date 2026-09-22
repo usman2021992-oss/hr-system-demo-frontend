@@ -9,7 +9,10 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  /** A reload was actually scheduled, so the spinner is telling the truth. */
   isRecovering: boolean;
+  /** The app could not be downloaded - as opposed to a bug in the app. */
+  isChunkError: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -17,18 +20,28 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false,
     error: null,
     isRecovering: false,
+    isChunkError: false,
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, isRecovering: isChunkLoadError(error) };
+    // Note what kind of failure this is, but do not yet claim to be
+    // recovering: whether a reload actually happens is decided below, and
+    // this method can be called more than once for one error.
+    return {
+      hasError: true,
+      error,
+      isChunkError: isChunkLoadError(error),
+      isRecovering: false,
+    };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
 
-    if (recoverFromChunkLoadError(error)) {
-      this.setState({ isRecovering: true });
-    }
+    // Only show "refreshing" when a refresh is genuinely on its way. It used
+    // to be shown for every chunk error, so once the reload cap was reached
+    // the screen sat on a spinner promising a reload that would never come.
+    this.setState({ isRecovering: recoverFromChunkLoadError(error) });
   }
 
   public render() {
@@ -56,9 +69,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 animation: 'spin 0.8s linear infinite'
               }} />
             </div>
-            <h2 style={{ color: 'var(--text-primary)', marginBottom: '10px' }}>Refreshing application</h2>
+            <h2 style={{ color: 'var(--text-primary)', marginBottom: '10px' }}>Aggiornamento in corso</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '340px', lineHeight: '1.6' }}>
-              A new application version is loading.
+              È in caricamento una nuova versione dell’applicazione.
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -74,6 +87,51 @@ export class ErrorBoundary extends Component<Props, State> {
               }}
             >
               Reload Now
+            </button>
+          </div>
+        );
+      }
+
+      // The app itself could not be downloaded and reloading has been tried
+      // enough times. A plain explanation and a button the person chooses to
+      // press - never another automatic reload, which is what turned a weak
+      // signal into a phone that flickered and could not be used.
+      if (this.state.isChunkError) {
+        return (
+          <div style={{
+            padding: '40px 20px',
+            textAlign: 'center',
+            fontFamily: 'var(--font-display)',
+            background: 'var(--surface)',
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{ fontSize: '44px', marginBottom: '16px' }}>📡</div>
+            <h2 style={{ color: 'var(--text-primary)', marginBottom: '10px' }}>
+              Impossibile caricare l’applicazione
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '340px', lineHeight: '1.6' }}>
+              Controlla la connessione e riprova. Se il problema continua, chiudi
+              e riapri il browser.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: '28px',
+                padding: '12px 26px',
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '20px',
+                fontWeight: '600',
+                fontSize: '15px',
+                cursor: 'pointer'
+              }}
+            >
+              Riprova
             </button>
           </div>
         );

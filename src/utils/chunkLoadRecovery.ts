@@ -1,8 +1,63 @@
 const RELOAD_PARAM = '__hr_app_reload';
+/**
+ * How many times this page has already reloaded itself, carried in the URL.
+ *
+ * sessionStorage is the primary record, but it is unavailable on exactly the
+ * devices that suffered most from this: iOS Safari in Private Browsing, with
+ * "Block All Cookies" set, or inside an in-app webview. There the counter
+ * below silently failed to persist, every reload looked like the first, and
+ * the cap could never be reached - so the page reloaded forever and the screen
+ * appeared to flicker.
+ *
+ * The URL is the one thing that always survives a reload, so the count rides
+ * along in it as a fallback.
+ */
+const RELOAD_COUNT_PARAM = '__hr_app_reload_n';
 const RELOAD_STORAGE_KEY = 'hr_app_chunk_reload_v1';
 const RELOAD_WINDOW_MS = 60_000;
 const MAX_RELOADS_PER_WINDOW = 2;
 const DUPLICATE_RELOAD_GRACE_MS = 500;
+
+/**
+ * The count read out of the URL when this module first loaded.
+ *
+ * Captured at module scope on purpose: `cleanupChunkReloadParam()` strips the
+ * parameter from the address bar as soon as the app boots, and this has to be
+ * read before that happens.
+ */
+const reloadCountAtBoot = readReloadCountFromUrl();
+
+/** Attempts made since this page loaded, for when storage cannot be written. */
+let reloadsThisPageLife = 0;
+/** When the last attempt was made, to collapse duplicate reports of one error. */
+let lastAttemptAt: number | null = null;
+
+function readReloadCountFromUrl(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = new URL(window.location.href).searchParams.get(RELOAD_COUNT_PARAM);
+    const parsed = raw ? Number.parseInt(raw, 10) : 0;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** True when the browser lets us keep a counter across reloads. */
+function canPersistReloadState(): boolean {
+  const storage = getStorage();
+  if (!storage) return false;
+  try {
+    // Availability is not the same as writability: Safari hands back a Storage
+    // object in Private Browsing and then throws on the first write.
+    const probe = `${RELOAD_STORAGE_KEY}__probe`;
+    storage.setItem(probe, '1');
+    storage.removeItem(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 type ReloadState = {
   firstAt: number;
@@ -166,6 +221,25 @@ export function isChunkLoadError(value: unknown): boolean {
 }
 
 function markReloadAttempt(now: number): 'attempt' | 'pending' | 'blocked' {
+  // No durable counter - Private Browsing, blocked cookies, an in-app webview.
+  // The URL carries how many reloads already happened, and this page's own
+  // attempts are counted in memory. Without both, nothing stops the loop.
+  if (!canPersistReloadState()) {
+    // One failed chunk is often reported twice - once to the global error
+    // handler and once to the React error boundary. Without this they would
+    // burn two of the two allowed attempts on a single failure.
+    if (lastAttemptAt !== null && now - lastAttemptAt < DUPLICATE_RELOAD_GRACE_MS) {
+      return 'pending';
+    }
+
+    const alreadyDone = reloadCountAtBoot + reloadsThisPageLife;
+    if (alreadyDone >= MAX_RELOADS_PER_WINDOW) return 'blocked';
+
+    reloadsThisPageLife++;
+    lastAttemptAt = now;
+    return 'attempt';
+  }
+
   const previous = readReloadState();
   if (!previous || now - previous.firstAt > RELOAD_WINDOW_MS) {
     writeReloadState({ firstAt: now, lastAt: now, count: 1 });
@@ -188,9 +262,18 @@ function markReloadAttempt(now: number): 'attempt' | 'pending' | 'blocked' {
   return 'attempt';
 }
 
+/** How many reloads have happened, whichever record is available. */
+function currentReloadCount(): number {
+  if (!canPersistReloadState()) return reloadCountAtBoot + reloadsThisPageLife;
+  return readReloadState()?.count ?? 0;
+}
+
 function getCacheBustedUrl(now: number): string {
   const url = new URL(window.location.href);
   url.searchParams.set(RELOAD_PARAM, String(now));
+  // Carried so the next page load knows this was not its first attempt, even
+  // when the browser refuses to keep anything for us.
+  url.searchParams.set(RELOAD_COUNT_PARAM, String(currentReloadCount()));
   return url.toString();
 }
 
@@ -198,9 +281,12 @@ export function cleanupChunkReloadParam(): void {
   if (typeof window === 'undefined') return;
 
   const url = new URL(window.location.href);
-  if (!url.searchParams.has(RELOAD_PARAM)) return;
+  if (!url.searchParams.has(RELOAD_PARAM) && !url.searchParams.has(RELOAD_COUNT_PARAM)) return;
 
   url.searchParams.delete(RELOAD_PARAM);
+  // Safe to remove from the address bar: the value was captured into
+  // `reloadCountAtBoot` when this module loaded, which happens first.
+  url.searchParams.delete(RELOAD_COUNT_PARAM);
   window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
 }
 
