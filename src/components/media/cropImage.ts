@@ -2,6 +2,10 @@ import type { Area } from 'react-easy-crop';
 
 /** Side of the square avatar that is uploaded — sharp on retina, ~100 KB as JPEG. */
 export const AVATAR_OUTPUT_SIZE = 512;
+/** Width of an uploaded logo. Logos are square, like avatars. */
+export const LOGO_OUTPUT_SIZE = 512;
+/** Width of an uploaded banner; the height follows the crop's aspect. */
+export const BANNER_OUTPUT_WIDTH = 1600;
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -13,8 +17,8 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 // Longest side of the image the editor works on. Phone photos are 4000px+;
-// rotating one on a canvas would pass the ~16 MP limit of iOS Safari, and a
-// 512px avatar gains nothing from more detail than this.
+// rotating one on a canvas would pass the ~16 MP limit of iOS Safari, and the
+// sizes above gain nothing from more detail than this.
 const WORKING_MAX_SIDE = 2048;
 
 /**
@@ -66,13 +70,15 @@ function rotatedBounds(width: number, height: number, rotation: number) {
 
 /**
  * Renders the area chosen in the cropper (pixel coordinates of the rotated
- * image, as react-easy-crop reports them) into a square canvas of `outputSize`.
+ * image, as react-easy-crop reports them) into a canvas of `outputWidth` by
+ * `outputHeight` — the same for a square avatar, different for a wide banner.
  */
 export async function renderCrop(
   imageSrc: string,
   pixelCrop: Area,
   rotation: number,
-  outputSize: number,
+  outputWidth: number,
+  outputHeight: number = outputWidth,
 ): Promise<HTMLCanvasElement> {
   const image = await loadImage(imageSrc);
 
@@ -88,21 +94,21 @@ export async function renderCrop(
   rctx.translate(-image.naturalWidth / 2, -image.naturalHeight / 2);
   rctx.drawImage(image, 0, 0);
 
-  // 2. Cut the chosen square out of it, scaled to the output size. A white
+  // 2. Cut the chosen area out of it, scaled to the output size. A white
   // background keeps transparent PNGs from turning black once saved as JPEG.
   const out = document.createElement('canvas');
-  out.width = outputSize;
-  out.height = outputSize;
+  out.width = outputWidth;
+  out.height = outputHeight;
   const ctx = out.getContext('2d');
   if (!ctx) throw new Error('CANVAS_UNAVAILABLE');
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, outputSize, outputSize);
+  ctx.fillRect(0, 0, outputWidth, outputHeight);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(
     rotated,
     pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
-    0, 0, outputSize, outputSize,
+    0, 0, outputWidth, outputHeight,
   );
 
   // Release the (possibly very large) intermediate bitmap right away.
@@ -111,7 +117,7 @@ export async function renderCrop(
   return out;
 }
 
-export function canvasToFile(canvas: HTMLCanvasElement, filename = 'avatar.jpg'): Promise<File> {
+export function canvasToFile(canvas: HTMLCanvasElement, filename = 'image.jpg'): Promise<File> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {

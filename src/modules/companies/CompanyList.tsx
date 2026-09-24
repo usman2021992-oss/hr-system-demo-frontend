@@ -4,6 +4,8 @@ import { useToast } from '../../context/ToastContext';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { getCompanies, updateCompany, uploadCompanyLogo } from '../../api/companies';
 import { getCompanyLogoUrl } from '../../api/client';
+import ImageCropModal from '../../components/media/ImageCropModal';
+import ImagePreviewModal from '../../components/media/ImagePreviewModal';
 import { getApiErrorCode } from '../../utils/apiErrors';
 import { translateApiError } from '../../utils/apiErrors';
 import { Company } from '../../types';
@@ -74,6 +76,9 @@ export function CompanyList() {
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  // Click the logo to see it full size; the editor crops before uploading.
+  const [logoPreviewOpen, setLogoPreviewOpen] = useState(false);
+  const [logoEditorOpen, setLogoEditorOpen] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
 
   const load = async () => {
@@ -108,9 +113,8 @@ export function CompanyList() {
     setLogoUploading(false);
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !company) return;
+  const handleLogoUpload = async (file: File) => {
+    if (!company) return;
 
     setLogoUploading(true);
     setLogoError(null);
@@ -124,9 +128,9 @@ export function CompanyList() {
         showToast(message, 'warning');
       }
       setLogoError(message);
+      throw err;
     } finally {
       setLogoUploading(false);
-      e.target.value = '';
     }
   };
 
@@ -286,36 +290,37 @@ export function CompanyList() {
             </span>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 'var(--radius-sm)',
-                overflow: 'hidden',
-                background: 'var(--surface-warm)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-muted)',
-                fontWeight: 700,
-                fontSize: 12,
-                flexShrink: 0,
-              }}>
+              <button
+                type="button"
+                onClick={() => { if (company.logoFilename) setLogoPreviewOpen(true); else setLogoEditorOpen(true); }}
+                title={company.logoFilename ? t('employees.avatarViewer.open', 'View photo') : t('companies.uploadLogo')}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 'var(--radius-sm)',
+                  overflow: 'hidden',
+                  padding: 0,
+                  background: 'var(--surface-warm)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted)',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  flexShrink: 0,
+                  cursor: company.logoFilename ? 'zoom-in' : 'pointer',
+                }}
+              >
                 {company.logoFilename ? (
                   <img src={getCompanyLogoUrl(company.logoFilename) ?? ''} alt={company.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : 'LOGO'}
-              </div>
+              </button>
 
-              <input
-                id="company-logo-upload-company-list"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                style={{ display: 'none' }}
-                onChange={handleLogoUpload}
+              <button
+                type="button"
+                onClick={() => setLogoEditorOpen(true)}
                 disabled={logoUploading || formSaving}
-              />
-              <label
-                htmlFor="company-logo-upload-company-list"
                 style={{
                   padding: '8px 12px',
                   borderRadius: 'var(--radius-sm)',
@@ -329,8 +334,29 @@ export function CompanyList() {
                 }}
               >
                 {logoUploading ? t('companies.logoUploading') : t('companies.uploadLogo')}
-              </label>
+              </button>
             </div>
+
+            {company.logoFilename && (
+              <ImagePreviewModal
+                open={logoPreviewOpen}
+                src={getCompanyLogoUrl(company.logoFilename) ?? ''}
+                title={company.name}
+                caption={t('companies.logoField')}
+                shape="square"
+                onClose={() => setLogoPreviewOpen(false)}
+                onChange={() => { setLogoPreviewOpen(false); setLogoEditorOpen(true); }}
+                changeLabel={t('companies.uploadLogo')}
+              />
+            )}
+            <ImageCropModal
+              open={logoEditorOpen}
+              onClose={() => setLogoEditorOpen(false)}
+              variant="logo"
+              title={t('companies.logoField')}
+              currentSrc={getCompanyLogoUrl(company.logoFilename)}
+              onSave={handleLogoUpload}
+            />
 
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('companies.logoHint')}</span>
           </div>

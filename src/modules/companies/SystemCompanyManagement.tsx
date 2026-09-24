@@ -21,6 +21,7 @@ import {
   activateCompany,
   deleteCompanyPermanent,
   uploadCompanyLogo,
+  deleteCompanyLogo,
   uploadCompanyBanner,
   deleteCompanyBanner,
   transferCompanyOwnership,
@@ -28,6 +29,8 @@ import {
 import { getCompanyGroups } from '../../api/companyGroups';
 import { getEmployees } from '../../api/employees';
 import { getCompanyLogoUrl, getCompanyBannerUrl, getAvatarUrl } from '../../api/client';
+import ImageCropModal from '../../components/media/ImageCropModal';
+import ImagePreviewModal from '../../components/media/ImagePreviewModal';
 import { getApiErrorCode, translateApiError } from '../../utils/apiErrors';
 import {
   EMPTY_FISCAL_ERRORS,
@@ -253,7 +256,7 @@ function payloadFromProfileForm(profile: CompanyProfileForm) {
   };
 }
 
-function StatBox({ value, label, icon }: { value: number | string; label: string; icon: React.ReactNode }) {
+function StatBox({ value, label, icon, hint }: { value: number | string; label: string; icon: React.ReactNode; hint?: string }) {
   return (
     <div style={{
       flex: 1,
@@ -285,6 +288,11 @@ function StatBox({ value, label, icon }: { value: number | string; label: string
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 3 }}>
           {label}
         </div>
+        {hint ? (
+          <div style={{ fontSize: '10.5px', color: 'var(--text-disabled)', fontWeight: 600, marginTop: 2 }}>
+            {hint}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -456,6 +464,11 @@ export default function SystemCompanyManagement() {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
+  // Click an image to see it full size; the editor crops before uploading.
+  const [logoPreviewOpen, setLogoPreviewOpen] = useState(false);
+  const [logoEditorOpen, setLogoEditorOpen] = useState(false);
+  const [bannerPreviewOpen, setBannerPreviewOpen] = useState(false);
+  const [bannerEditorOpen, setBannerEditorOpen] = useState(false);
   const [ownerCandidates, setOwnerCandidates] = useState<Array<{ id: number; name: string; surname: string; avatarFilename?: string | null; companyCount: number }>>([]);
   const [ownerCandidatesLoading, setOwnerCandidatesLoading] = useState(false);
   const [timezoneDraft, setTimezoneDraft] = useState<string | null>(null);
@@ -692,9 +705,10 @@ export default function SystemCompanyManagement() {
     });
   }, [ownerCandidates, t]);
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || editingCompanyId === null) return;
+  // The image editor hands over a cropped file and expects a rejection when the
+  // upload fails, so it can stay open for another try.
+  const handleLogoUpload = async (file: File) => {
+    if (editingCompanyId === null) return;
 
     setLogoUploading(true);
     setLogoError(null);
@@ -708,15 +722,30 @@ export default function SystemCompanyManagement() {
         showToast(message, 'warning');
       }
       setLogoError(message);
+      throw err;
     } finally {
       setLogoUploading(false);
-      e.target.value = '';
     }
   };
 
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || editingCompanyId === null) return;
+  const handleLogoDelete = async () => {
+    if (editingCompanyId === null) return;
+    setLogoUploading(true);
+    setLogoError(null);
+    try {
+      await deleteCompanyLogo(editingCompanyId);
+      showToast(t('companies.logoRemoved', 'Logo rimosso'), 'success');
+      await load();
+    } catch (err: unknown) {
+      setLogoError(translateApiError(err, t, t('companies.logoError')) ?? t('companies.logoError'));
+      throw err;
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleBannerUpload = async (file: File) => {
+    if (editingCompanyId === null) return;
 
     setBannerUploading(true);
     setBannerError(null);
@@ -730,9 +759,9 @@ export default function SystemCompanyManagement() {
         showToast(message, 'warning');
       }
       setBannerError(message);
+      throw err;
     } finally {
       setBannerUploading(false);
-      e.target.value = '';
     }
   };
 
@@ -746,6 +775,7 @@ export default function SystemCompanyManagement() {
       await load();
     } catch (err: unknown) {
       setBannerError(translateApiError(err, t, t('companies.bannerDeleteError', 'Errore durante rimozione banner')) ?? t('companies.bannerDeleteError', 'Errore durante rimozione banner'));
+      throw err;
     } finally {
       setBannerUploading(false);
     }
@@ -1183,7 +1213,15 @@ export default function SystemCompanyManagement() {
                 <div style={{ padding: '14px 20px 18px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <StatBox value={c.storeCount} label={t('companies.statStores')} icon={<Store size={16} />} />
                   <StatBox value={c.employeeCount} label={t('companies.statEmployees')} icon={<Users size={16} />} />
-                  <StatBox value={c.activeDevicesCount || 0} label={t('companies.statDevices', 'Active devices')} icon={<Smartphone size={16} />} />
+                  {/* Billed terminals is the number the invoice uses: every active
+                      terminal, paired to a device or not. The paired count is shown
+                      under it so the two are never confused. */}
+                  <StatBox
+                    value={c.billableTerminalsCount ?? c.activeDevicesCount ?? 0}
+                    label={t('companies.statTerminalsBilled', 'Terminals (billed)')}
+                    hint={t('companies.statTerminalsRegistered', '{{count}} paired to a device', { count: c.activeDevicesCount || 0 })}
+                    icon={<Smartphone size={16} />}
+                  />
                   <StatBox value={`${((c.storageUsedBytes || 0) / (1024 * 1024 * 1024)).toFixed(2)}/${c.storageLimitGb || 500} GB`} label={t('companies.statStorage', 'Storage')} icon={<HardDrive size={16} />} />
                 </div>
 
@@ -1316,7 +1354,7 @@ export default function SystemCompanyManagement() {
                   <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
                     {(() => {
                       const totalBill = ((c.employeeCount * (c.pricePerEmployee || 0)) +
-                        ((c.activeDevicesCount || 0) * (c.pricePerDevice || 0)) +
+                        ((c.billableTerminalsCount ?? c.activeDevicesCount ?? 0) * (c.pricePerDevice || 0)) +
                         (Math.max(0, ((c.storageUsedBytes || 0) / (1024 * 1024 * 1024)) - (c.storageLimitGb || 500)) * (c.extraStoragePricePerGb || 0)));
 
                       let finalBill = totalBill;
@@ -1638,35 +1676,37 @@ export default function SystemCompanyManagement() {
                 {logoError && <Alert variant="danger" onClose={() => setLogoError(null)}>{logoError}</Alert>}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 'var(--radius-sm)',
-                    overflow: 'hidden',
-                    background: editingCompany.logoFilename ? 'transparent' : getAvatarColor(editingCompany.name),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: 13,
-                    flexShrink: 0,
-                  }}>
+                  <button
+                    type="button"
+                    onClick={() => { if (editingCompany.logoFilename) setLogoPreviewOpen(true); else setLogoEditorOpen(true); }}
+                    title={editingCompany.logoFilename ? t('employees.avatarViewer.open', 'View photo') : t('companies.uploadLogo')}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 'var(--radius-sm)',
+                      overflow: 'hidden',
+                      padding: 0,
+                      border: '1px solid var(--border)',
+                      background: editingCompany.logoFilename ? 'transparent' : getAvatarColor(editingCompany.name),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: 13,
+                      flexShrink: 0,
+                      cursor: editingCompany.logoFilename ? 'zoom-in' : 'pointer',
+                    }}
+                  >
                     {editingCompany.logoFilename ? (
                       <img src={getCompanyLogoUrl(editingCompany.logoFilename) ?? ''} alt={editingCompany.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : getInitials(editingCompany.name)}
-                  </div>
+                  </button>
 
-                  <input
-                    id="company-logo-upload"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    style={{ display: 'none' }}
-                    onChange={handleLogoUpload}
+                  <button
+                    type="button"
+                    onClick={() => setLogoEditorOpen(true)}
                     disabled={logoUploading || formSaving}
-                  />
-                  <label
-                    htmlFor="company-logo-upload"
                     style={{
                       padding: '8px 12px',
                       borderRadius: 'var(--radius-sm)',
@@ -1680,7 +1720,7 @@ export default function SystemCompanyManagement() {
                     }}
                   >
                     {logoUploading ? t('companies.logoUploading') : t('companies.uploadLogo')}
-                  </label>
+                  </button>
                 </div>
 
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('companies.logoHint')}</span>
@@ -1697,7 +1737,9 @@ export default function SystemCompanyManagement() {
                   <img
                     src={getCompanyBannerUrl(editingCompany.bannerFilename) ?? ''}
                     alt={editingCompany.name}
-                    style={{ width: '100%', maxHeight: 130, objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                    onClick={() => setBannerPreviewOpen(true)}
+                    title={t('employees.avatarViewer.open', 'View photo')}
+                    style={{ width: '100%', maxHeight: 130, objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', cursor: 'zoom-in' }}
                   />
                 ) : (
                   <div style={{ padding: '10px 12px', border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--text-muted)' }}>
@@ -1706,16 +1748,10 @@ export default function SystemCompanyManagement() {
                 )}
 
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <input
-                    id="company-banner-upload"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    style={{ display: 'none' }}
-                    onChange={handleBannerUpload}
+                  <button
+                    type="button"
+                    onClick={() => setBannerEditorOpen(true)}
                     disabled={bannerUploading || formSaving}
-                  />
-                  <label
-                    htmlFor="company-banner-upload"
                     style={{
                       padding: '8px 12px',
                       borderRadius: 'var(--radius-sm)',
@@ -1729,7 +1765,7 @@ export default function SystemCompanyManagement() {
                     }}
                   >
                     {bannerUploading ? t('companies.bannerUploading', 'Caricamento banner...') : t('companies.uploadBanner', 'Carica banner')}
-                  </label>
+                  </button>
 
                   {editingCompany.bannerFilename && (
                     <Button variant="danger" onClick={handleBannerDelete} disabled={bannerUploading || formSaving}>
@@ -1799,6 +1835,55 @@ export default function SystemCompanyManagement() {
         currency={historyCompany?.currency}
         onClose={() => setHistoryCompany(null)}
       />
+
+      {/* Logo and banner of the company being edited: view large, or crop and upload. */}
+      {editingCompany && (
+        <>
+          {editingCompany.logoFilename && (
+            <ImagePreviewModal
+              open={logoPreviewOpen}
+              src={getCompanyLogoUrl(editingCompany.logoFilename) ?? ''}
+              title={editingCompany.name}
+              caption={t('companies.logoField')}
+              shape="square"
+              onClose={() => setLogoPreviewOpen(false)}
+              onChange={() => { setLogoPreviewOpen(false); setLogoEditorOpen(true); }}
+              changeLabel={t('companies.uploadLogo')}
+            />
+          )}
+          {editingCompany.bannerFilename && (
+            <ImagePreviewModal
+              open={bannerPreviewOpen}
+              src={getCompanyBannerUrl(editingCompany.bannerFilename) ?? ''}
+              title={editingCompany.name}
+              caption={t('companies.bannerField', 'Banner aziendale')}
+              shape="wide"
+              onClose={() => setBannerPreviewOpen(false)}
+              onChange={() => { setBannerPreviewOpen(false); setBannerEditorOpen(true); }}
+              changeLabel={t('companies.uploadBanner', 'Carica banner')}
+            />
+          )}
+          <ImageCropModal
+            open={logoEditorOpen}
+            onClose={() => setLogoEditorOpen(false)}
+            variant="logo"
+            title={t('companies.logoField')}
+            currentSrc={getCompanyLogoUrl(editingCompany.logoFilename)}
+            initials={getInitials(editingCompany.name)}
+            onSave={handleLogoUpload}
+            onRemove={editingCompany.logoFilename ? handleLogoDelete : undefined}
+          />
+          <ImageCropModal
+            open={bannerEditorOpen}
+            onClose={() => setBannerEditorOpen(false)}
+            variant="banner"
+            title={t('companies.bannerField', 'Banner aziendale')}
+            currentSrc={getCompanyBannerUrl(editingCompany.bannerFilename)}
+            onSave={handleBannerUpload}
+            onRemove={editingCompany.bannerFilename ? handleBannerDelete : undefined}
+          />
+        </>
+      )}
     </div>
   );
 }
