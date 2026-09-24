@@ -555,9 +555,11 @@ export const BillingPage: React.FC = () => {
                             {t('billing.employeesShort', 'dipendenti')}:{' '}
                             {b ? `${b.employeeCount}/${b.seatQuantity ?? '—'}` : '—'}
                           </span>
-                          <span>
+                          {/* Billed terminals against licences; the paired count
+                              is a different question and is only a tooltip here. */}
+                          <span title={t('billing.terminalsRegisteredHint', '{{count}} paired to a device', { count: b?.activeDevicesCount ?? 0 })}>
                             {t('billing.terminalsShort', 'terminali')}:{' '}
-                            {b ? `${b.activeDevicesCount}/${b.deviceQuantity ?? '—'}` : '—'}
+                            {b ? `${b.billableTerminalsCount ?? b.activeDevicesCount}/${b.deviceQuantity ?? '—'}` : '—'}
                           </span>
                         </span>
                       </span>
