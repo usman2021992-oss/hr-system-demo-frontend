@@ -2,17 +2,17 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n/config';
-import AvatarLightbox from '../components/avatar/AvatarLightbox';
+import ImagePreviewModal from '../components/media/ImagePreviewModal';
 
 function renderBox(onClose: () => void) {
   return (
     <I18nextProvider i18n={i18n}>
-      <AvatarLightbox open src="/uploads/avatars/36-1.jpg" name="Luca Barbieri" caption="Employee" onClose={onClose} />
+      <ImagePreviewModal open src="/uploads/avatars/36-1.jpg" title="Luca Barbieri" caption="Employee" onClose={onClose} />
     </I18nextProvider>
   );
 }
 
-describe('AvatarLightbox', () => {
+describe('ImagePreviewModal', () => {
   // Regression: the parent re-renders every few seconds (permission polling)
   // with a new onClose; that used to reset the fade-in and hide the photo.
   it('keeps the photo visible when the parent re-renders with a new onClose', () => {

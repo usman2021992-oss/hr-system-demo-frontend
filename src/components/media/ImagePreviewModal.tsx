@@ -3,19 +3,31 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Camera } from 'lucide-react';
 
-interface AvatarLightboxProps {
+export type PreviewShape = 'round' | 'square' | 'wide';
+
+interface ImagePreviewModalProps {
   open: boolean;
   src: string;
-  name: string;
-  /** Second line under the name, e.g. the role. */
+  /** Shown under the image and used as the dialog's accessible name. */
+  title: string;
+  /** Second line under the title, e.g. a role or a company name. */
   caption?: string | null;
+  /** How the image is framed: a profile photo, a logo, or a banner. */
+  shape?: PreviewShape;
   onClose: () => void;
   /** Shows a "Change photo" action when given. */
   onChange?: () => void;
+  /** Label for that action; defaults to the profile-photo wording. */
+  changeLabel?: string;
 }
 
-/** Full-screen view of a profile photo. */
-export default function AvatarLightbox({ open, src, name, caption, onClose, onChange }: AvatarLightboxProps) {
+/**
+ * Full-screen view of one image — a profile photo, a company or store logo, or
+ * a banner. Opened by clicking the image anywhere it is shown.
+ */
+export default function ImagePreviewModal({
+  open, src, title, caption, shape = 'round', onClose, onChange, changeLabel,
+}: ImagePreviewModalProps) {
   const { t } = useTranslation();
   const closeRef = useRef<HTMLButtonElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -26,7 +38,7 @@ export default function AvatarLightbox({ open, src, name, caption, onClose, onCh
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
-  // Fade in once per photo. An image already in the browser cache may finish
+  // Fade in once per image. An image already in the browser cache may finish
   // before onLoad is attached, so `complete` is checked as well.
   useEffect(() => {
     if (!open) return;
@@ -51,11 +63,18 @@ export default function AvatarLightbox({ open, src, name, caption, onClose, onCh
 
   if (!open) return null;
 
+  const isRound = shape === 'round';
+  const frame: React.CSSProperties = isRound
+    ? { width: 'min(78vw, 64vh, 460px)', aspectRatio: '1 / 1', borderRadius: '50%' }
+    : shape === 'square'
+      ? { width: 'min(82vw, 66vh, 520px)', aspectRatio: '1 / 1', borderRadius: 24 }
+      : { width: 'min(92vw, 1100px)', aspectRatio: '3 / 1', borderRadius: 20 };
+
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={name}
+      aria-label={title}
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 9500,
@@ -91,9 +110,7 @@ export default function AvatarLightbox({ open, src, name, caption, onClose, onCh
         onClick={(e) => e.stopPropagation()}
         style={{
           position: 'relative',
-          width: 'min(78vw, 64vh, 460px)',
-          aspectRatio: '1 / 1',
-          borderRadius: '50%',
+          ...frame,
           padding: 6,
           background: 'linear-gradient(145deg, rgba(201,151,58,0.95), rgba(201,151,58,0.25) 45%, rgba(255,255,255,0.10))',
           boxShadow: '0 30px 90px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)',
@@ -101,13 +118,15 @@ export default function AvatarLightbox({ open, src, name, caption, onClose, onCh
         }}
       >
         <div style={{
-          width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden',
+          width: '100%', height: '100%',
+          borderRadius: isRound ? '50%' : Number(frame.borderRadius) - 5,
+          overflow: 'hidden',
           background: 'rgba(255,255,255,0.06)',
         }}>
           <img
             ref={imgRef}
             src={src}
-            alt={name}
+            alt={title}
             draggable={false}
             onLoad={() => setLoaded(true)}
             onError={() => setLoaded(true)}
@@ -125,7 +144,7 @@ export default function AvatarLightbox({ open, src, name, caption, onClose, onCh
         style={{ textAlign: 'center', color: '#fff', animation: 'fadeSlideUp 0.35s ease 0.05s both' }}
       >
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>
-          {name}
+          {title}
         </div>
         {caption && (
           <div style={{ marginTop: 4, fontSize: 13, color: 'rgba(255,255,255,0.62)' }}>{caption}</div>
@@ -147,7 +166,7 @@ export default function AvatarLightbox({ open, src, name, caption, onClose, onCh
             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(201,151,58,0.14)'; }}
           >
             <Camera size={15} />
-            {t('employees.avatarViewer.change')}
+            {changeLabel ?? t('employees.avatarViewer.change')}
           </button>
         )}
       </div>

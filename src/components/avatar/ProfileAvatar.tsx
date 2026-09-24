@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Maximize2 } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
-import AvatarLightbox from './AvatarLightbox';
-import AvatarCropModal from './AvatarCropModal';
+import ImagePreviewModal from '../media/ImagePreviewModal';
+import ImageCropModal from '../media/ImageCropModal';
 
 interface ProfileAvatarProps {
   /** Authenticated URL of the current photo, or null for initials. */
@@ -120,18 +120,19 @@ export default function ProfileAvatar({
       </div>
 
       {src && (
-        <AvatarLightbox
+        <ImagePreviewModal
           open={viewing}
           src={src}
-          name={name}
+          title={name}
           caption={caption}
+          shape="round"
           onClose={() => setViewing(false)}
           onChange={canEdit ? openEditor : undefined}
         />
       )}
 
       {canEdit && (
-        <AvatarCropModal
+        <ImageCropModal
           open={editing}
           onClose={() => setEditing(false)}
           currentSrc={src}

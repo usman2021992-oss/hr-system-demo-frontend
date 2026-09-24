@@ -5,40 +5,60 @@ import Cropper, { Area, Point } from 'react-easy-crop';
 import { X, ImagePlus, ZoomIn, ZoomOut, RotateCcw, RotateCw, Undo2, Trash2, Check, RefreshCw } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
-import { AVATAR_OUTPUT_SIZE, canvasToFile, prepareSourceImage, renderCrop } from './cropImage';
+import { BANNER_OUTPUT_WIDTH, LOGO_OUTPUT_SIZE, canvasToFile, prepareSourceImage, renderCrop } from './cropImage';
 
-interface AvatarCropModalProps {
+export type CropVariant = 'avatar' | 'logo' | 'banner';
+
+interface ImageCropModalProps {
   open: boolean;
   onClose: () => void;
-  /** Current photo, shown next to the drop zone and offered for removal. */
+  /**
+   * What is being edited. Decides the crop shape and the size uploaded:
+   * a round 1:1 photo, a square logo, or a wide 3:1 banner.
+   */
+  variant?: CropVariant;
+  /** Heading, so a company logo does not say "Profile photo". */
+  title?: string;
+  /** Current image, shown next to the drop zone and offered for removal. */
   currentSrc?: string | null;
-  /** Initials shown in the preview when there is no photo yet. */
+  /** Initials shown in the preview when there is no image yet (avatars). */
   initials?: string;
   /**
-   * Uploads the prepared 512×512 JPEG. Reject to keep the window open (the
-   * caller shows its own error toast).
+   * Uploads the prepared image. Reject to keep the window open (the caller
+   * shows its own error toast).
    */
   onSave: (file: File) => Promise<void>;
-  /** Enables "Remove photo" when the person has one. Same contract as onSave. */
+  /** Enables "Remove" when there is an image. Same contract as onSave. */
   onRemove?: () => Promise<void>;
 }
 
 const MAX_INPUT_BYTES = 15 * 1024 * 1024;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
-const PREVIEW_SIZE = 240;
+const PREVIEW_WIDTH = 320;
 
 type Busy = null | 'loading' | 'saving' | 'removing';
 
 /**
- * Pick a photo, frame it in a round crop (drag, zoom, rotate, straighten), see
- * a live preview, and upload a small square JPEG — so any phone photo fits the
- * server's 2 MB limit and every avatar comes out framed the same way.
+ * Pick an image, frame it (drag, zoom, rotate, straighten), see a live preview,
+ * and upload a right-sized JPEG.
+ *
+ * Cropping in the browser means every avatar, logo and banner arrives in the
+ * same shape, and a phone photo that would be refused for size never reaches
+ * the server as-is.
  */
-export default function AvatarCropModal({ open, onClose, currentSrc, initials, onSave, onRemove }: AvatarCropModalProps) {
+export default function ImageCropModal({
+  open, onClose, variant = 'avatar', title, currentSrc, initials, onSave, onRemove,
+}: ImageCropModalProps) {
   const { t } = useTranslation();
   const { isMobile } = useBreakpoint();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isBanner = variant === 'banner';
+  const aspect = isBanner ? 3 : 1;
+  const cropShape: 'round' | 'rect' = variant === 'avatar' ? 'round' : 'rect';
+  const outputWidth = isBanner ? BANNER_OUTPUT_WIDTH : LOGO_OUTPUT_SIZE;
+  const outputHeight = Math.round(outputWidth / aspect);
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -98,17 +118,17 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
     };
   }, [open]);
 
-  // Live preview of the exact square that will be uploaded (debounced).
+  // Live preview of the exact image that will be uploaded (debounced).
   useEffect(() => {
     if (!imageUrl || !pixels) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      renderCrop(imageUrl, pixels, rotation, PREVIEW_SIZE)
+      renderCrop(imageUrl, pixels, rotation, PREVIEW_WIDTH, Math.round(PREVIEW_WIDTH / aspect))
         .then((canvas) => { if (!cancelled) setPreviewUrl(canvas.toDataURL('image/jpeg', 0.85)); })
         .catch(() => { /* the preview is cosmetic */ });
     }, 120);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [imageUrl, pixels, rotation]);
+  }, [imageUrl, pixels, rotation, aspect]);
 
   const acceptFile = async (file: File | undefined | null) => {
     if (!file) return;
@@ -140,8 +160,8 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
     setError(null);
     let file: File;
     try {
-      const canvas = await renderCrop(imageUrl, pixels, rotation, AVATAR_OUTPUT_SIZE);
-      file = await canvasToFile(canvas);
+      const canvas = await renderCrop(imageUrl, pixels, rotation, outputWidth, outputHeight);
+      file = await canvasToFile(canvas, isBanner ? 'banner.jpg' : 'image.jpg');
     } catch {
       setError(t('employees.avatarEditor.processError'));
       setBusy(null);
@@ -173,12 +193,13 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
 
   const cropHeight = isMobile ? 300 : 360;
   const locked = busy === 'saving' || busy === 'removing';
+  const previewRadius = variant === 'avatar' ? '50%' : isBanner ? 8 : 12;
 
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="avatar-editor-title"
+      aria-labelledby="image-editor-title"
       onClick={handleClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 9500,
@@ -193,7 +214,7 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 720,
+          width: '100%', maxWidth: isBanner ? 860 : 720,
           maxHeight: isMobile ? '94vh' : '92vh',
           background: 'var(--surface)',
           borderRadius: isMobile ? '20px 20px 0 0' : 20,
@@ -209,11 +230,11 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
           borderBottom: '1px solid var(--border-light)',
         }}>
           <div style={{ minWidth: 0 }}>
-            <h2 id="avatar-editor-title" style={{
+            <h2 id="image-editor-title" style={{
               margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
               color: 'var(--text-primary)', letterSpacing: '-0.02em',
             }}>
-              {t('employees.avatarEditor.title')}
+              {title ?? t('employees.avatarEditor.title')}
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
               {t('employees.avatarEditor.subtitle')}
@@ -250,13 +271,16 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
               {currentSrc && (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  padding: '8px 4px', minWidth: isMobile ? undefined : 150,
+                  padding: '8px 4px', minWidth: isMobile ? undefined : isBanner ? 220 : 150,
                 }}>
                   <img
                     src={currentSrc}
                     alt=""
                     style={{
-                      width: 112, height: 112, borderRadius: '50%', objectFit: 'cover',
+                      width: isBanner ? 200 : 112,
+                      height: isBanner ? 67 : 112,
+                      borderRadius: previewRadius,
+                      objectFit: 'cover',
                       border: '3px solid rgba(201,151,58,0.40)', boxShadow: 'var(--shadow)',
                     }}
                   />
@@ -317,7 +341,7 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 22 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile || isBanner ? 'column' : 'row', gap: isMobile ? 16 : 22 }}>
               {/* Cropper + controls */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
@@ -330,9 +354,9 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
                     crop={crop}
                     zoom={zoom}
                     rotation={rotation}
-                    aspect={1}
-                    cropShape="round"
-                    showGrid={false}
+                    aspect={aspect}
+                    cropShape={cropShape}
+                    showGrid={isBanner}
                     minZoom={MIN_ZOOM}
                     maxZoom={MAX_ZOOM}
                     zoomSpeed={0.25}
@@ -400,16 +424,16 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
 
               {/* Preview column */}
               <div style={{
-                width: isMobile ? '100%' : 196, flexShrink: 0,
-                display: 'flex', flexDirection: isMobile ? 'row' : 'column',
-                alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start',
+                width: isMobile || isBanner ? '100%' : 196, flexShrink: 0,
+                display: 'flex', flexDirection: isBanner ? 'column' : isMobile ? 'row' : 'column',
+                alignItems: 'center', justifyContent: isMobile && !isBanner ? 'space-between' : 'flex-start',
                 gap: 14,
                 padding: isMobile ? '14px 16px' : '18px 14px',
                 borderRadius: 16,
                 background: 'linear-gradient(170deg, var(--surface-warm), var(--background))',
                 border: '1px solid var(--border-light)',
               }}>
-                <div style={{ textAlign: isMobile ? 'left' : 'center' }}>
+                <div style={{ textAlign: isMobile && !isBanner ? 'left' : 'center' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                     {t('employees.avatarEditor.preview')}
                   </div>
@@ -420,13 +444,24 @@ export default function AvatarCropModal({ open, onClose, currentSrc, initials, o
                   )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', gap: 12 }}>
-                  <PreviewCircle src={previewUrl} initials={initials} size={isMobile ? 76 : 116} ring />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <PreviewCircle src={previewUrl} initials={initials} size={44} />
-                    <PreviewCircle src={previewUrl} initials={initials} size={30} />
+                {isBanner ? (
+                  <div style={{
+                    width: '100%', aspectRatio: '3 / 1', borderRadius: 10, overflow: 'hidden',
+                    background: 'var(--primary)', border: '2px solid var(--surface)', boxShadow: 'var(--shadow-sm)',
+                  }}>
+                    {previewUrl && (
+                      <img src={previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', gap: 12 }}>
+                    <PreviewTile src={previewUrl} initials={initials} size={isMobile ? 76 : 116} radius={previewRadius} ring />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <PreviewTile src={previewUrl} initials={initials} size={44} radius={previewRadius} />
+                      <PreviewTile src={previewUrl} initials={initials} size={30} radius={previewRadius} />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="button"
@@ -565,10 +600,12 @@ function FooterButton({ tone, onClick, disabled, children }: {
   );
 }
 
-function PreviewCircle({ src, initials, size, ring }: { src: string | null; initials?: string; size: number; ring?: boolean }) {
+function PreviewTile({ src, initials, size, radius, ring }: {
+  src: string | null; initials?: string; size: number; radius: string | number; ring?: boolean;
+}) {
   return (
     <div style={{
-      width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+      width: size, height: size, borderRadius: radius, overflow: 'hidden', flexShrink: 0,
       background: 'var(--primary)', color: '#fff',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: Math.max(10, size * 0.32),
