@@ -8,6 +8,8 @@ import {
   MapPin,
   Users,
   ArrowLeft,
+  Image as ImageIcon,
+  Maximize2,
   Pencil,
   PowerOff,
   Power,
@@ -49,12 +51,17 @@ import {
   activateStore,
   deleteStorePermanent,
   uploadStoreLogo,
+  deleteStoreLogo,
+  uploadStoreBanner,
+  deleteStoreBanner,
   getStoreOperatingHours,
   updateStoreOperatingHours,
 } from '../../api/stores';
+import ImageCropModal from '../../components/media/ImageCropModal';
+import ImagePreviewModal from '../../components/media/ImagePreviewModal';
 import { getCompanyById } from '../../api/companies';
 import { getEmployees, createEmployee, updateEmployee } from '../../api/employees';
-import { getAvatarUrl, getStoreLogoUrl, getCompanyLogoUrl } from '../../api/client';
+import { getAvatarUrl, getStoreLogoUrl, getStoreBannerUrl, getCompanyLogoUrl } from '../../api/client';
 import { Company, Employee, Store, StoreOperatingHour, UserRole } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -303,7 +310,13 @@ export default function StoreDetail() {
   const [logoHover, setLogoHover] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
-  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  // Photo and banner: click to see it large, camera button to replace it.
+  const [logoPreviewOpen, setLogoPreviewOpen] = useState(false);
+  const [logoEditorOpen, setLogoEditorOpen] = useState(false);
+  const [bannerPreviewOpen, setBannerPreviewOpen] = useState(false);
+  const [bannerEditorOpen, setBannerEditorOpen] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerHover, setBannerHover] = useState(false);
   const [hoveredEmployeeId, setHoveredEmployeeId] = useState<number | null>(null);
 
   const [hoursSaving, setHoursSaving] = useState(false);
@@ -435,7 +448,8 @@ export default function StoreDetail() {
   }, [activeTab, storeId, terminalUser]);
 
   const logoUrl = getStoreLogoUrl(store?.logoFilename);
-  
+  const bannerUrl = getStoreBannerUrl(store?.bannerFilename);
+
   const getTerminalEmail = () => {
     if (!store) return '';
     const storeName = store.name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -669,6 +683,7 @@ export default function StoreDetail() {
     }
   };
 
+  // These reject on failure so the editor stays open for another try.
   const handleLogoUpload = async (file: File) => {
     if (!store) return;
     setLogoUploading(true);
@@ -683,8 +698,61 @@ export default function StoreDetail() {
         showToast(message ?? t('stores.logoError', 'Error uploading store photo'), 'warning');
       }
       setLogoError(message);
+      throw err;
     } finally {
       setLogoUploading(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    if (!store) return;
+    setLogoUploading(true);
+    setLogoError(null);
+    try {
+      await deleteStoreLogo(store.id);
+      showToast(t('stores.logoRemoved', 'Store photo removed'), 'success');
+      await loadData();
+    } catch (err: unknown) {
+      setLogoError(translateApiError(err, t, t('stores.logoError', 'Error uploading store photo')));
+      throw err;
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleBannerUpload = async (file: File) => {
+    if (!store) return;
+    setBannerUploading(true);
+    setLogoError(null);
+    try {
+      await uploadStoreBanner(store.id, file);
+      showToast(t('stores.bannerUpdated', 'Store banner updated'), 'success');
+      await loadData();
+    } catch (err: unknown) {
+      const message = translateApiError(err, t, t('stores.bannerError', 'Error updating store banner'));
+      if (getApiErrorCode(err) === 'INVALID_FILE_TYPE') {
+        showToast(message ?? t('stores.bannerError', 'Error updating store banner'), 'warning');
+      }
+      setLogoError(message);
+      throw err;
+    } finally {
+      setBannerUploading(false);
+    }
+  };
+
+  const handleBannerRemove = async () => {
+    if (!store) return;
+    setBannerUploading(true);
+    setLogoError(null);
+    try {
+      await deleteStoreBanner(store.id);
+      showToast(t('stores.bannerRemoved', 'Store banner removed'), 'success');
+      await loadData();
+    } catch (err: unknown) {
+      setLogoError(translateApiError(err, t, t('stores.bannerError', 'Error updating store banner')));
+      throw err;
+    } finally {
+      setBannerUploading(false);
     }
   };
 
@@ -863,17 +931,58 @@ export default function StoreDetail() {
       </div>
 
       <div style={{ border: '1px solid var(--border)', borderRadius: 14, background: 'var(--surface)', overflow: 'hidden' }}>
-        <div style={{
-          padding: '18px 18px 0',
-          minHeight: 116,
-          background: 'linear-gradient(135deg, rgba(13,33,55,0.94) 0%, rgba(27,77,62,0.86) 100%)',
-        }} />
+        {/* Banner: click to see it full size, the button changes it. */}
+        <div
+          onMouseEnter={() => setBannerHover(true)}
+          onMouseLeave={() => setBannerHover(false)}
+          onClick={() => { if (bannerUrl) setBannerPreviewOpen(true); }}
+          style={{
+            position: 'relative',
+            padding: '18px 18px 0',
+            minHeight: 116,
+            cursor: bannerUrl ? 'zoom-in' : 'default',
+            background: bannerUrl
+              ? `linear-gradient(180deg, rgba(13,33,55,0.28) 0%, rgba(13,33,55,0.62) 100%), url(${bannerUrl}) center/cover no-repeat`
+              : 'linear-gradient(135deg, rgba(13,33,55,0.94) 0%, rgba(27,77,62,0.86) 100%)',
+          }}
+        >
+          {canEdit && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setBannerEditorOpen(true); }}
+              disabled={bannerUploading}
+              title={store.bannerFilename
+                ? t('stores.bannerChange', 'Change banner')
+                : t('stores.bannerAdd', 'Add banner')}
+              style={{
+                position: 'absolute', top: 12, right: 12,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 999,
+                border: '1px solid rgba(255,255,255,0.28)',
+                background: bannerHover ? 'rgba(13,33,55,0.78)' : 'rgba(13,33,55,0.55)',
+                color: '#fff', fontSize: 12, fontWeight: 600,
+                cursor: bannerUploading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.15s',
+              }}
+            >
+              <ImageIcon size={13} />
+              {bannerUploading
+                ? t('stores.bannerUploading', 'Uploading...')
+                : store.bannerFilename
+                  ? t('stores.bannerChange', 'Change banner')
+                  : t('stores.bannerAdd', 'Add banner')}
+            </button>
+          )}
+        </div>
         <div style={{ padding: '0 18px 18px' }}>
           <button
             type="button"
             onMouseEnter={() => setLogoHover(true)}
             onMouseLeave={() => setLogoHover(false)}
-            onClick={() => logoInputRef.current?.click()}
+            onClick={() => {
+              if (logoUrl) setLogoPreviewOpen(true);
+              else if (canEdit) setLogoEditorOpen(true);
+            }}
             disabled={logoUploading}
             style={{
               marginTop: -52,
@@ -907,21 +1016,35 @@ export default function StoreDetail() {
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <Camera size={18} />
+              {logoUrl ? <Maximize2 size={18} /> : <Camera size={18} />}
             </span>
           </button>
 
-          <input
-            ref={logoInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: 'none' }}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void handleLogoUpload(file);
-              event.target.value = '';
-            }}
-          />
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setLogoEditorOpen(true)}
+              disabled={logoUploading}
+              title={store.logoFilename
+                ? t('stores.logoChange', 'Change store photo')
+                : t('stores.logoAdd', 'Add store photo')}
+              aria-label={store.logoFilename
+                ? t('stores.logoChange', 'Change store photo')
+                : t('stores.logoAdd', 'Add store photo')}
+              style={{
+                position: 'relative',
+                top: -34,
+                left: 78,
+                width: 34, height: 34, borderRadius: '50%', padding: 0,
+                background: 'var(--accent)', border: '3px solid var(--surface)',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', cursor: logoUploading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
+              }}
+            >
+              <Camera size={15} />
+            </button>
+          )}
 
           {logoError ? <div style={{ marginTop: 10 }}><Alert variant="danger" onClose={() => setLogoError(null)}>{logoError}</Alert></div> : null}
 
@@ -3272,6 +3395,55 @@ export default function StoreDetail() {
           </p>
         </div>
       </Modal>
+
+      {/* Store photo and banner: full-size view, and the editor that crops before upload. */}
+      {logoUrl && (
+        <ImagePreviewModal
+          open={logoPreviewOpen}
+          src={logoUrl}
+          title={store.name}
+          caption={store.companyName ?? null}
+          shape="square"
+          onClose={() => setLogoPreviewOpen(false)}
+          onChange={canEdit ? () => { setLogoPreviewOpen(false); setLogoEditorOpen(true); } : undefined}
+          changeLabel={t('stores.logoChange', 'Change store photo')}
+        />
+      )}
+      {bannerUrl && (
+        <ImagePreviewModal
+          open={bannerPreviewOpen}
+          src={bannerUrl}
+          title={store.name}
+          caption={t('stores.bannerField', 'Store banner')}
+          shape="wide"
+          onClose={() => setBannerPreviewOpen(false)}
+          onChange={canEdit ? () => { setBannerPreviewOpen(false); setBannerEditorOpen(true); } : undefined}
+          changeLabel={t('stores.bannerChange', 'Change banner')}
+        />
+      )}
+      {canEdit && (
+        <>
+          <ImageCropModal
+            open={logoEditorOpen}
+            onClose={() => setLogoEditorOpen(false)}
+            variant="logo"
+            title={t('stores.logoField', 'Store photo')}
+            currentSrc={logoUrl}
+            initials={store.name.slice(0, 2).toUpperCase()}
+            onSave={handleLogoUpload}
+            onRemove={store.logoFilename ? handleLogoRemove : undefined}
+          />
+          <ImageCropModal
+            open={bannerEditorOpen}
+            onClose={() => setBannerEditorOpen(false)}
+            variant="banner"
+            title={t('stores.bannerField', 'Store banner')}
+            currentSrc={bannerUrl}
+            onSave={handleBannerUpload}
+            onRemove={store.bannerFilename ? handleBannerRemove : undefined}
+          />
+        </>
+      )}
     </div>
   );
 }

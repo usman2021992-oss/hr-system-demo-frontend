@@ -48,6 +48,17 @@ export async function deleteStoreLogo(id: number): Promise<void> {
   await apiClient.delete(`/stores/${id}/logo`);
 }
 
+export async function uploadStoreBanner(id: number, file: File): Promise<{ bannerUrl: string }> {
+  const formData = new FormData();
+  formData.append('banner', file);
+  const { data } = await apiClient.post(`/stores/${id}/banner`, formData);
+  return data.data;
+}
+
+export async function deleteStoreBanner(id: number): Promise<void> {
+  await apiClient.delete(`/stores/${id}/banner`);
+}
+
 export async function getStoreOperatingHours(id: number): Promise<StoreOperatingHour[]> {
   const { data } = await apiClient.get(`/stores/${id}/operating-hours`);
   return data.data.hours;

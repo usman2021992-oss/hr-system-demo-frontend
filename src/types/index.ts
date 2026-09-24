@@ -62,7 +62,10 @@ export interface Company {
   gracePeriodDays?: number | null;
   storeCount: number;
   employeeCount: number;
+  /** Terminals paired to a device. */
   activeDevicesCount: number;
+  /** Terminals that take a licence: every active one, paired or not. */
+  billableTerminalsCount?: number;
   employeeDevicesCount?: number;
   storageUsedBytes: number;
   createdAt: string;
@@ -75,6 +78,7 @@ export interface Store {
   groupName?: string | null;
   companyLogoFilename?: string | null;
   logoFilename?: string | null;
+  bannerFilename?: string | null;
   name: string;
   code: string;
   address: string | null;
@@ -602,6 +606,8 @@ export interface SuperAdminBillingCompanyRow {
   gracePeriodDays: number;
   employeeCount: number;
   activeDevicesCount: number;
+  /** Terminals that take a licence, matching the invoice. */
+  billableTerminalsCount?: number;
   subscriptionId: number | null;
   provider: PaymentProvider | null;
   subscriptionStatus: SubscriptionStatus | null;

@@ -61,6 +61,8 @@ import { DatePicker } from '../../components/ui/DatePicker';
 import { LocationFieldGroup } from '../../components/location';
 import { getCountryDisplayName } from '../../utils/country';
 import { getCompanies } from '../../api/companies';
+import ImageCropModal from '../../components/media/ImageCropModal';
+import ImagePreviewModal from '../../components/media/ImagePreviewModal';
 import {
   EMPTY_FISCAL_ERRORS,
   FiscalFieldErrors,
@@ -241,8 +243,11 @@ export default function CompanyDetail() {
   const [bannerUploading, setBannerUploading] = useState(false);
   const [logoSize, setLogoSize] = useState<number | null>(null);
   const [bannerSize, setBannerSize] = useState<number | null>(null);
-  const logoInputRef = useRef<HTMLInputElement | null>(null);
-  const bannerInputRef = useRef<HTMLInputElement | null>(null);
+  // Click an image to see it full size; the editor crops before uploading.
+  const [logoPreviewOpen, setLogoPreviewOpen] = useState(false);
+  const [logoEditorOpen, setLogoEditorOpen] = useState(false);
+  const [bannerPreviewOpen, setBannerPreviewOpen] = useState(false);
+  const [bannerEditorOpen, setBannerEditorOpen] = useState(false);
 
   const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
   const [statusConfirmMode, setStatusConfirmMode] = useState<'deactivate' | 'activate'>('deactivate');
@@ -529,6 +534,7 @@ export default function CompanyDetail() {
         showToast(message ?? t('companies.logoError'), 'warning');
       }
       setMediaError(message);
+      throw err;
     } finally {
       setLogoUploading(false);
     }
@@ -548,6 +554,7 @@ export default function CompanyDetail() {
         showToast(message ?? t('companies.bannerError', 'Error updating company banner'), 'warning');
       }
       setMediaError(message);
+      throw err;
     } finally {
       setBannerUploading(false);
     }
@@ -563,6 +570,7 @@ export default function CompanyDetail() {
       await loadData();
     } catch (err: unknown) {
       setMediaError(translateApiError(err, t, t('companies.bannerDeleteError', 'Error removing company banner')));
+      throw err;
     } finally {
       setBannerUploading(false);
     }
@@ -578,6 +586,7 @@ export default function CompanyDetail() {
       await loadData();
     } catch (err: unknown) {
       setMediaError(translateApiError(err, t, t('companies.logoDeleteError', 'Error removing company logo')));
+      throw err;
     } finally {
       setLogoUploading(false);
     }
@@ -734,16 +743,43 @@ export default function CompanyDetail() {
         }}
       >
         <div
+          onClick={() => { if (bannerUrl) setBannerPreviewOpen(true); }}
           style={{
+            position: 'relative',
             minHeight: 240,
             padding: '12px 20px',
             display: 'flex',
             alignItems: 'flex-end',
+            cursor: bannerUrl ? 'zoom-in' : 'default',
             background: bannerUrl
               ? `linear-gradient(180deg, rgba(13,33,55,0.35) 0%, rgba(13,33,55,0.82) 100%), url(${bannerUrl}) center/cover no-repeat`
               : 'linear-gradient(135deg, rgba(13,33,55,0.92) 0%, rgba(22,51,82,0.9) 45%, rgba(15,118,110,0.74) 100%)',
           }}
         >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setBannerEditorOpen(true); }}
+            disabled={bannerUploading}
+            title={company.bannerFilename
+              ? t('companies.bannerChange', 'Change banner')
+              : t('companies.bannerAdd', 'Add banner')}
+            style={{
+              position: 'absolute', top: 14, right: 16,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 13px', borderRadius: 999,
+              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'rgba(13,33,55,0.55)', color: '#fff',
+              fontSize: 12, fontWeight: 600,
+              cursor: bannerUploading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <ImageIcon size={13} />
+            {bannerUploading
+              ? t('companies.bannerUploading', 'Uploading...')
+              : company.bannerFilename
+                ? t('companies.bannerChange', 'Change banner')
+                : t('companies.bannerAdd', 'Add banner')}
+          </button>
           <div style={{ minWidth: 0, paddingLeft: heroTitleOffset }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, lineHeight: 1.00, fontWeight: 800, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {company.name}
@@ -761,7 +797,7 @@ export default function CompanyDetail() {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap', marginTop: -42 }}>
             <button
               type="button"
-              onClick={() => setMediaOpen(true)}
+              onClick={() => { if (logoUrl) setLogoPreviewOpen(true); else setMediaOpen(true); }}
               onMouseEnter={() => setLogoHover(true)}
               onMouseLeave={() => setLogoHover(false)}
               style={{
@@ -1024,7 +1060,9 @@ export default function CompanyDetail() {
         const pricePerEmp = company.pricePerEmployee || 0;
         const pricePerDev = company.pricePerDevice || 0;
         const pricePerGb = company.extraStoragePricePerGb || 0;
-        const activeDevCount = company.activeDevicesCount || 0;
+        // Billed terminals, matching the invoice: every active terminal, whether
+        // it has been paired to a device yet or not.
+        const activeDevCount = company.billableTerminalsCount ?? company.activeDevicesCount ?? 0;
         const employeeDevCount = company.employeeDevicesCount || 0;
         const activeEmpCount = activeEmployees.length;
 
@@ -1769,29 +1807,6 @@ export default function CompanyDetail() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {mediaError ? <Alert variant="danger" onClose={() => setMediaError(null)}>{mediaError}</Alert> : null}
 
-          <input
-            ref={logoInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: 'none' }}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void handleLogoFile(file);
-              event.target.value = '';
-            }}
-          />
-          <input
-            ref={bannerInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: 'none' }}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void handleBannerFile(file);
-              event.target.value = '';
-            }}
-          />
-
           <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', background: 'var(--surface)' }}>
             <div
               style={{
@@ -1866,7 +1881,7 @@ export default function CompanyDetail() {
                 <button
                   type="button"
                   disabled={bannerUploading || logoUploading}
-                  onClick={() => bannerInputRef.current?.click()}
+                  onClick={() => setBannerEditorOpen(true)}
                   style={{ ...mediaActionBtnStyle, width: 'auto', minWidth: 0 }}
                 >
                   <UploadCloud size={14} />
@@ -1879,7 +1894,7 @@ export default function CompanyDetail() {
                     <button
                       type="button"
                       disabled={bannerUploading || logoUploading}
-                      onClick={() => bannerInputRef.current?.click()}
+                      onClick={() => setBannerEditorOpen(true)}
                       style={{ ...mediaActionBtnStyle, width: 'auto', minWidth: 0 }}
                     >
                       <Pencil size={14} />
@@ -1945,7 +1960,7 @@ export default function CompanyDetail() {
                 <button
                   type="button"
                   disabled={logoUploading || bannerUploading}
-                  onClick={() => logoInputRef.current?.click()}
+                  onClick={() => setLogoEditorOpen(true)}
                   style={{ ...mediaActionBtnStyle, width: 'auto', minWidth: 0 }}
                 >
                   <UploadCloud size={14} />
@@ -1958,7 +1973,7 @@ export default function CompanyDetail() {
                     <button
                       type="button"
                       disabled={logoUploading || bannerUploading}
-                      onClick={() => logoInputRef.current?.click()}
+                      onClick={() => setLogoEditorOpen(true)}
                       style={{ ...mediaActionBtnStyle, width: 'auto', minWidth: 0 }}
                     >
                       <Pencil size={14} />
@@ -2068,6 +2083,51 @@ export default function CompanyDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Logo and banner: full-size view, and the editor that crops before upload. */}
+      {logoUrl && (
+        <ImagePreviewModal
+          open={logoPreviewOpen}
+          src={logoUrl}
+          title={company.name}
+          caption={company.groupName ?? null}
+          shape="square"
+          onClose={() => setLogoPreviewOpen(false)}
+          onChange={() => { setLogoPreviewOpen(false); setLogoEditorOpen(true); }}
+          changeLabel={t('companies.logoChange', 'Change logo')}
+        />
+      )}
+      {bannerUrl && (
+        <ImagePreviewModal
+          open={bannerPreviewOpen}
+          src={bannerUrl}
+          title={company.name}
+          caption={t('companies.bannerField', 'Company banner')}
+          shape="wide"
+          onClose={() => setBannerPreviewOpen(false)}
+          onChange={() => { setBannerPreviewOpen(false); setBannerEditorOpen(true); }}
+          changeLabel={t('companies.bannerChange', 'Change banner')}
+        />
+      )}
+      <ImageCropModal
+        open={logoEditorOpen}
+        onClose={() => setLogoEditorOpen(false)}
+        variant="logo"
+        title={t('companies.logoField', 'Company logo')}
+        currentSrc={logoUrl}
+        initials={initials(company.name)}
+        onSave={handleLogoFile}
+        onRemove={company.logoFilename ? handleDeleteLogo : undefined}
+      />
+      <ImageCropModal
+        open={bannerEditorOpen}
+        onClose={() => setBannerEditorOpen(false)}
+        variant="banner"
+        title={t('companies.bannerField', 'Company banner')}
+        currentSrc={bannerUrl}
+        onSave={handleBannerFile}
+        onRemove={company.bannerFilename ? handleDeleteBanner : undefined}
+      />
     </div>
   );
 }
