@@ -38,7 +38,36 @@ export interface Shift {
   userSurname: string;
   userAvatarFilename?: string | null;
   shiftHours: string | number | null;
+
+  // ── What attendance says about this shift ────────────────────────────────
+  /**
+   * 'completed'   clocked in and out
+   * 'in_progress' clocked in, still inside the shift (plus a two-hour grace)
+   * 'incomplete'  clocked in, never clocked out, grace passed
+   * 'missed'      the shift has been and gone with nothing recorded
+   * 'scheduled'   still in the future
+   * 'off' / 'cancelled' nothing to expect
+   */
+  attendanceState?: ShiftAttendanceState;
+  attendanceCheckinAt?: string | null;
+  attendanceCheckoutAt?: string | null;
+  attendanceBreakStartAt?: string | null;
+  attendanceBreakEndAt?: string | null;
+  attendanceEventCount?: number;
+  /** At least one event was entered by hand rather than scanned. */
+  attendanceHasManualEvent?: boolean;
+  /** Minutes between the shift start and the clock-in: positive is late. */
+  attendanceCheckinDelayMinutes?: number | null;
 }
+
+export type ShiftAttendanceState =
+  | 'completed'
+  | 'in_progress'
+  | 'incomplete'
+  | 'missed'
+  | 'scheduled'
+  | 'cancelled'
+  | 'off';
 
 function normalizeDateOnly(value: string): string {
   if (!value) return value;

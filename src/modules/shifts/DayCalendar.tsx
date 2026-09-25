@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, CalendarDays, Moon, Palmtree, Thermometer, Coffee, Store as StoreIcon, Clock, Maximize, Minimize } from 'lucide-react';
 import { Shift } from '../../api/shifts';
 import { LeaveBlock, isLeaveGranted } from '../../api/leave';
+import ShiftAttendanceMark from './ShiftAttendanceMark';
 import { TransferAssignment } from '../../api/transfers';
 import { WindowDisplayActivity } from '../../api/windowDisplay';
 import { getAvatarUrl } from '../../api/client';
@@ -721,6 +722,14 @@ export default function DayCalendar({
                               </span>
                             )}
                           </span>
+
+                          {/* One mark per shift, on the first block only: a split
+                              shift is still one shift as far as attendance goes. */}
+                          {!isSecondBlock && (
+                            <span style={{ position: 'relative', zIndex: 2, marginLeft: 'auto', display: 'inline-flex' }}>
+                              <ShiftAttendanceMark shift={shift} onLeave={isApproved} />
+                            </span>
+                          )}
                         </div>
                       );
                     };

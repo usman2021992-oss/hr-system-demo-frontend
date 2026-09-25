@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, Moon, Palmtree, Thermometer, Store } from 'lucide-react';
 import { Shift } from '../../api/shifts';
 import { LeaveBlock, isLeaveGranted } from '../../api/leave';
+import ShiftAttendanceMark from './ShiftAttendanceMark';
 import { TransferAssignment } from '../../api/transfers';
 import { WindowDisplayActivity } from '../../api/windowDisplay';
 import { getAvatarUrl } from '../../api/client';
@@ -624,6 +625,8 @@ export default function WeeklyCalendar({
                             </span>
                           )}
                         </span>
+                        {/* Did this shift actually happen? Hover for the times. */}
+                        <ShiftAttendanceMark shift={shift} onLeave={lvApproved} />
                       </div>
                     );
                   };

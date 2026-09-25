@@ -178,6 +178,8 @@ export default function MonthlyCalendar({
 
   // Build monthly aggregates per date.
   const shiftCountMap = new Map<string, number>();
+  /** Per day: shifts worked to the end, shifts with a problem, shifts counted. */
+  const attendanceByDate = new Map<string, { completed: number; issues: number; tracked: number }>();
   const storesByDate = new Map<string, Set<number>>();
   const employeesByDate = new Map<string, Set<number>>();
   const offDayUsersByDate = new Map<string, Set<number>>();
@@ -210,6 +212,14 @@ export default function MonthlyCalendar({
 
     if (shift.status !== 'cancelled') {
       shiftCountMap.set(dateKey, (shiftCountMap.get(dateKey) ?? 0) + 1);
+      // A month cell has no room for a mark per shift, so it carries the day's
+      // tally instead: how many shifts were worked to the end, and how many
+      // went wrong. The week and day views show the detail.
+      const tally = attendanceByDate.get(dateKey) ?? { completed: 0, issues: 0, tracked: 0 };
+      if (shift.attendanceState === 'completed') { tally.completed += 1; tally.tracked += 1; }
+      else if (shift.attendanceState === 'incomplete' || shift.attendanceState === 'missed') { tally.issues += 1; tally.tracked += 1; }
+      else if (shift.attendanceState === 'in_progress') { tally.tracked += 1; }
+      attendanceByDate.set(dateKey, tally);
       addUserToDateSet(employeesByDate, dateKey, shift.userId);
       const stores = storesByDate.get(dateKey) ?? new Set<number>();
       stores.add(shift.storeId);
@@ -443,6 +453,7 @@ export default function MonthlyCalendar({
           }
           const dateStr = formatDate(date);
           const shiftCount = shiftCountMap.get(dateStr) ?? 0;
+          const dayAttendance = attendanceByDate.get(dateStr) ?? null;
           const storeCount = storesByDate.get(dateStr)?.size ?? 0;
           const employeeCount = employeesByDate.get(dateStr)?.size ?? 0;
           const offDayUserCount = offDayUsersByDate.get(dateStr)?.size ?? 0;
@@ -852,6 +863,24 @@ export default function MonthlyCalendar({
                     <Clock3 size={10} strokeWidth={2.4} />
                     {t('shifts.shiftCountPlural', 'Shifts')} {shiftCount}
                   </span>
+
+                  {dayAttendance && dayAttendance.tracked > 0 && (
+                    <span
+                      title={dayAttendance.issues > 0
+                        ? t('shifts.attendance.dayIssues', '{{count}} shift(s) without a proper clock-out', { count: dayAttendance.issues })
+                        : t('shifts.attendance.dayAllGood', 'All shifts worked in full')}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                        borderRadius: 4, padding: '2px 6px',
+                        fontSize: '0.62rem', fontWeight: 800, lineHeight: 1.2,
+                        border: `1px solid ${dayAttendance.issues > 0 ? 'rgba(180,83,9,0.45)' : 'rgba(21,128,61,0.40)'}`,
+                        background: dayAttendance.issues > 0 ? 'rgba(251,191,36,0.16)' : 'rgba(52,211,153,0.16)',
+                        color: dayAttendance.issues > 0 ? '#b45309' : '#15803d',
+                      }}
+                    >
+                      {dayAttendance.issues > 0 ? `⚠ ${dayAttendance.issues}` : `✓ ${dayAttendance.completed}`}
+                    </span>
+                  )}
                 </div>
               )}
 
