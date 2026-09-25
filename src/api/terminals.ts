@@ -31,6 +31,9 @@ export interface Terminal {
   lastSeenIp: string | null;
   lastSeenAt: string | null;
   deviceResetPending: boolean;
+  /** Set when the terminal has been moved to the deleted list. */
+  deletedAt?: string | null;
+  deletedByName?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   createdByName: string | null;
@@ -122,7 +125,56 @@ export const updateTerminal = async (id: number, payload: { email?: string; pass
   return response.data;
 };
 
+/** Moves the terminal to the Super Admin's deleted list. Nothing is destroyed. */
 export const deleteTerminal = async (id: number): Promise<{ success: boolean; data: any }> => {
   const response = await apiClient.delete(`terminals/${id}`);
   return response.data;
+};
+
+/** The deleted list — Super Admin only. */
+export const getDeletedTerminals = async (filters: TerminalFilters = {}): Promise<ListTerminalsResponse> => {
+  const params = new URLSearchParams({ deleted: 'true' });
+  if (filters.search) params.append('search', filters.search);
+  if (filters.company_id) params.append('company_id', filters.company_id);
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.limit) params.append('limit', filters.limit.toString());
+
+  const response = await apiClient.get<ListTerminalsResponse>(`terminals?${params.toString()}`);
+  return response.data;
+};
+
+/** Brings a deleted terminal back, inactive. Super Admin only. */
+export const restoreTerminal = async (
+  id: number,
+): Promise<{ success: boolean; message?: string; data: { id: number; email: string; addressRecovered: boolean } }> => {
+  const response = await apiClient.post(`terminals/${id}/restore`);
+  return response.data;
+};
+
+/** Removes a deleted terminal for good. Super Admin only. */
+export const permanentlyDeleteTerminal = async (id: number): Promise<{ success: boolean; data: any }> => {
+  const response = await apiClient.delete(`terminals/${id}/permanent`);
+  return response.data;
+};
+
+export const activateTerminal = async (id: number): Promise<{ success: boolean; data: any }> => {
+  const response = await apiClient.patch(`terminals/${id}/activate`);
+  return response.data;
+};
+
+export const deactivateTerminal = async (id: number): Promise<{ success: boolean; data: any }> => {
+  const response = await apiClient.patch(`terminals/${id}/deactivate`);
+  return response.data;
+};
+
+/**
+ * The terminal's password, read one at a time.
+ *
+ * It no longer travels in the list: any authenticated employee could read every
+ * password in their company and sign in as a store terminal. Each read is
+ * recorded in the audit trail.
+ */
+export const getTerminalPassword = async (id: number): Promise<string | null> => {
+  const response = await apiClient.get<{ success: boolean; data: { password: string | null } }>(`terminals/${id}/password`);
+  return response.data.data.password;
 };

@@ -1023,18 +1023,9 @@ export default function ShiftsPage() {
               </div>
             )}
 
-            {loading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{
-                  width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-                  border: '2px solid var(--border)', borderTopColor: 'var(--primary)',
-                  animation: 'spin 0.7s linear infinite',
-                }} />
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  {t('common.loading', 'Caricamento...')}
-                </span>
-              </div>
-            )}
+            {/* No spinner here: the calendar below already shows one while it
+                loads, and two of them at once — one beside the store picker,
+                one in the middle of the page — just looked broken. */}
           </div>
         </div>
 

@@ -5,7 +5,8 @@ import { Eye, EyeOff, RefreshCw, Copy, CheckCircle2, KeyRound, ChevronDown, Stor
 import { getBrowserTimeZone, getStoreTimezoneTag, getTimezoneLocalTimeLabel, resolveStoreTimezone, viewerDiffersFromStore } from '../../utils/timezone';
 import QRCode from 'react-qr-code';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
-import { createTerminal, updateTerminal, deleteTerminal, getStoresWithTerminalStatus, StoreTerminalStatus, Terminal } from '../../api/terminals';
+import { createTerminal, updateTerminal, deleteTerminal, getTerminalPassword, getStoresWithTerminalStatus, StoreTerminalStatus, Terminal } from '../../api/terminals';
+import { useAuth } from '../../context/AuthContext';
 import { generateQrToken, QrTokenResponse } from '../../api/attendance';
 import { resetEmployeeDevice } from '../../api/employees';
 import { translateApiError } from '../../utils/apiErrors';
@@ -56,6 +57,14 @@ export function TerminalForm({ open = true, terminal, onSuccess, onCancel, onRef
   const { isMobile } = useBreakpoint();
   const { showToast } = useToast();
   
+  const { user } = useAuth();
+  // Only an admin archives a terminal; the Super Admin's deleted view is where
+  // it can then be restored or removed for good.
+  const canDelete = user?.isSuperAdmin === true || user?.role === 'admin';
+  // Area and store managers open this to check their store's terminal; changing
+  // one is for admin and hr, and the routes refuse anyone else.
+  const canManage = user?.isSuperAdmin === true || user?.role === 'admin' || user?.role === 'hr';
+
   const [stores, setStores] = useState<StoreTerminalStatus[]>([]);
   const [loadingStores, setLoadingStores] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
@@ -147,9 +156,20 @@ export function TerminalForm({ open = true, terminal, onSuccess, onCancel, onRef
         setEmail('');
         setQrData(null);
       } else {
-        const stored = terminal.plainPassword ?? '';
-        setPassword(stored);
-        setStoredPasswordMissing(!stored);
+        // The password no longer rides along in the list — every employee could
+        // read it there. It is fetched for this one terminal, and the read is
+        // recorded in the audit trail.
+        setPassword('');
+        setStoredPasswordMissing(false);
+        getTerminalPassword(terminal.id)
+          .then((stored) => {
+            setPassword(stored ?? '');
+            setStoredPasswordMissing(!stored);
+          })
+          .catch(() => {
+            setPassword('');
+            setStoredPasswordMissing(true);
+          });
       }
     } else {
       setSelectedStoreId('');
@@ -750,13 +770,14 @@ export function TerminalForm({ open = true, terminal, onSuccess, onCancel, onRef
 
             <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface-warm)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div>
-                {isEditMode && (
+                {isEditMode && canDelete && (
                   <Button
                     variant="danger"
                     size="sm"
                     onClick={handleDelete}
                     loading={loading}
                     style={{ border: confirmDelete ? '2px solid var(--danger)' : 'none' }}
+                    title={t('terminals.deleteTerminalHint', 'Moves the terminal to the deleted list. Nothing is lost.')}
                   >
                     <Trash2 size={16} style={{ marginRight: '8px' }} />
                     {confirmDelete ? t('common.confirm') : t('terminals.deleteTerminal')}
@@ -764,10 +785,14 @@ export function TerminalForm({ open = true, terminal, onSuccess, onCancel, onRef
                 )}
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <Button variant="secondary" onClick={onCancel} disabled={loading}>{t('common.cancel')}</Button>
-                <Button onClick={handleSubmit} loading={loading}>
-                  {isEditMode ? t('terminals.updateTerminal') : t('common.save')}
+                <Button variant="secondary" onClick={onCancel} disabled={loading}>
+                  {canManage ? t('common.cancel') : t('common.close')}
                 </Button>
+                {canManage && (
+                  <Button onClick={handleSubmit} loading={loading}>
+                    {isEditMode ? t('terminals.updateTerminal') : t('common.save')}
+                  </Button>
+                )}
               </div>
             </div>
           </>
