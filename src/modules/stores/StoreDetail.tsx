@@ -975,17 +975,23 @@ export default function StoreDetail() {
           )}
         </div>
         <div style={{ padding: '0 18px 18px' }}>
-          <button
-            type="button"
+          {/* The photo and its camera button travel together: the wrapper is the
+              positioning context, so the button sits on the photo's corner
+              instead of drifting into the banner. */}
+          <div
             onMouseEnter={() => setLogoHover(true)}
             onMouseLeave={() => setLogoHover(false)}
+            style={{ position: 'relative', display: 'inline-block', marginTop: -52, lineHeight: 0 }}
+          >
+          <button
+            type="button"
             onClick={() => {
               if (logoUrl) setLogoPreviewOpen(true);
               else if (canEdit) setLogoEditorOpen(true);
             }}
             disabled={logoUploading}
             style={{
-              marginTop: -52,
+              display: 'block',
               width: 108,
               height: 108,
               borderRadius: 20,
@@ -1032,19 +1038,26 @@ export default function StoreDetail() {
                 ? t('stores.logoChange', 'Change store photo')
                 : t('stores.logoAdd', 'Add store photo')}
               style={{
-                position: 'relative',
-                top: -34,
-                left: 78,
+                position: 'absolute',
+                bottom: 2,
+                right: -4,
                 width: 34, height: 34, borderRadius: '50%', padding: 0,
                 background: 'var(--accent)', border: '3px solid var(--surface)',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', cursor: logoUploading ? 'not-allowed' : 'pointer',
                 boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
+                // Out of the way until wanted. Touch screens have no hover, so
+                // there it simply stays visible.
+                opacity: logoHover || isMobile ? 1 : 0,
+                transform: logoHover || isMobile ? 'scale(1)' : 'scale(0.85)',
+                pointerEvents: logoHover || isMobile ? 'auto' : 'none',
+                transition: 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16,1,0.3,1)',
               }}
             >
               <Camera size={15} />
             </button>
           )}
+          </div>
 
           {logoError ? <div style={{ marginTop: 10 }}><Alert variant="danger" onClose={() => setLogoError(null)}>{logoError}</Alert></div> : null}
 
