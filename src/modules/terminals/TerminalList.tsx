@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useLicenses, LicenseNotice } from '../billing/useLicenses';
 import {
   getTerminals,
+  getDeletedTerminals,
+  restoreTerminal,
+  permanentlyDeleteTerminal,
   getTerminalOperationalState,
   Terminal,
   TerminalOperationalState,
@@ -17,7 +20,9 @@ import { Input } from '../../components/ui/Input';
 import { Alert } from '../../components/ui/Alert';
 import { Pagination } from '../../components/ui/Pagination';
 import { TerminalForm } from './TerminalForm';
-import { Plus, ChevronRight, Filter, Search, X, CheckCircle2, Clock, RotateCcw, Ban } from 'lucide-react';
+import { Plus, ChevronRight, Filter, Search, X, CheckCircle2, Clock, RotateCcw, Ban, Trash2 } from 'lucide-react';
+import ConfirmModal from '../../components/ui/ConfirmModal';
+import { translateApiError } from '../../utils/apiErrors';
 import { Button } from '../../components/ui/Button';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import apiClient from '../../api/client';
@@ -110,6 +115,16 @@ export default function TerminalList() {
 
   const isAdminOrHr = user?.role === 'admin' || user?.role === 'hr' || user?.role === 'area_manager';
   const isSuperAdmin = user?.isSuperAdmin === true;
+  // Area and store managers see terminals; only admin and hr change them, and
+  // only an admin moves one to the deleted list.
+  const canManageTerminals = isSuperAdmin || user?.role === 'admin' || user?.role === 'hr';
+  const canDeleteTerminals = isSuperAdmin || user?.role === 'admin';
+
+  // The deleted list is the Super Admin's, and holds what admins have removed.
+  const [view, setView] = useState<'live' | 'deleted'>('live');
+  const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<Terminal | null>(null);
+  const [purging, setPurging] = useState(false);
   const tRole = (roleKey: string) => (t as (k: string) => string)(`roles.${roleKey}`);
 
   const hasActiveFilters = !!(
@@ -162,15 +177,17 @@ export default function TerminalList() {
     setLoading(true);
     setError(null);
     try {
-      const response = await getTerminals({
-        search,
-        status: '',
-        registration: registrationStates.join(','),
-        store_id: storeIds.join(','),
-        company_id: companyIds.join(','),
-        page,
-        limit,
-      });
+      const response = view === 'deleted'
+        ? await getDeletedTerminals({ search, company_id: companyIds.join(','), page, limit })
+        : await getTerminals({
+            search,
+            status: '',
+            registration: registrationStates.join(','),
+            store_id: storeIds.join(','),
+            company_id: companyIds.join(','),
+            page,
+            limit,
+          });
       setTerminals(response.data.data);
       setTotal(response.data.meta.total);
       setTotalPages(response.data.meta.totalPages);
@@ -180,7 +197,7 @@ export default function TerminalList() {
     } finally {
       setLoading(false);
     }
-  }, [search, storeIds.join(','), companyIds.join(','), registrationStates.join(','), page, limit, t]);
+  }, [search, storeIds.join(','), companyIds.join(','), registrationStates.join(','), page, limit, t, view]);
 
   useEffect(() => {
     fetchTerminals();
@@ -224,8 +241,42 @@ export default function TerminalList() {
   );
 
   const handleOpenForm = (terminal: Terminal | null = null) => {
+    // Nothing to edit in the deleted list: restore it first.
+    if (view === 'deleted') return;
     setSelectedTerminal(terminal);
     setShowForm(true);
+  };
+
+  const handleRestore = async (terminal: Terminal) => {
+    setRestoringId(terminal.id);
+    try {
+      const res = await restoreTerminal(terminal.id);
+      showToast(
+        res.message ?? t('terminals.restored', 'Terminal restored. It is inactive until you activate it.'),
+        'success',
+      );
+      setListReloadTick((prev) => prev + 1);
+      void refreshLicenses();
+    } catch (err) {
+      showToast(translateApiError(err, t, t('common.error')) ?? t('common.error'), 'error');
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    if (!purgeTarget) return;
+    setPurging(true);
+    try {
+      await permanentlyDeleteTerminal(purgeTarget.id);
+      showToast(t('terminals.permanentlyDeleted', 'Terminal permanently deleted'), 'success');
+      setPurgeTarget(null);
+      setListReloadTick((prev) => prev + 1);
+    } catch (err) {
+      showToast(translateApiError(err, t, t('common.error')) ?? t('common.error'), 'error');
+    } finally {
+      setPurging(false);
+    }
   };
 
   const columns: Column<Terminal>[] = [
@@ -313,23 +364,74 @@ export default function TerminalList() {
       key: 'id',
       label: t('terminals.colActions'),
       align: 'right',
-      render: (row) => (
-        <button
-          onClick={() => handleOpenForm(row)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '12px', fontWeight: 600, color: 'var(--accent)',
-            fontFamily: 'var(--font-body)', padding: '5px 10px',
-            borderRadius: 'var(--radius-sm)', display: 'inline-flex',
-            alignItems: 'center', gap: '3px', whiteSpace: 'nowrap',
-          }}
-        >
-          {t('common.open')}
-          <ChevronRight size={14} />
-        </button>
-      ),
+      render: (row) =>
+        view === 'deleted' ? (
+          <span style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); void handleRestore(row); }}
+              disabled={restoringId === row.id}
+              style={{
+                background: 'none', border: '1px solid var(--border)', cursor: 'pointer',
+                fontSize: '12px', fontWeight: 600, color: 'var(--primary)',
+                fontFamily: 'var(--font-body)', padding: '5px 10px',
+                borderRadius: 'var(--radius-sm)', display: 'inline-flex',
+                alignItems: 'center', gap: '4px', whiteSpace: 'nowrap',
+              }}
+            >
+              <RotateCcw size={13} />
+              {t('terminals.restore', 'Restore')}
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPurgeTarget(row); }}
+              style={{
+                background: 'none', border: '1px solid var(--danger-border)', cursor: 'pointer',
+                fontSize: '12px', fontWeight: 600, color: 'var(--danger)',
+                fontFamily: 'var(--font-body)', padding: '5px 10px',
+                borderRadius: 'var(--radius-sm)', display: 'inline-flex',
+                alignItems: 'center', gap: '4px', whiteSpace: 'nowrap',
+              }}
+            >
+              <Trash2 size={13} />
+              {t('terminals.deleteForever', 'Delete forever')}
+            </button>
+          </span>
+        ) : (
+          <button
+            onClick={() => handleOpenForm(row)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '12px', fontWeight: 600, color: 'var(--accent)',
+              fontFamily: 'var(--font-body)', padding: '5px 10px',
+              borderRadius: 'var(--radius-sm)', display: 'inline-flex',
+              alignItems: 'center', gap: '3px', whiteSpace: 'nowrap',
+            }}
+          >
+            {canManageTerminals ? t('common.open') : t('common.view', 'View')}
+            <ChevronRight size={14} />
+          </button>
+        ),
     },
   ];
+
+  // In the deleted list, when it was removed and by whom replaces the status.
+  const deletedColumns: Column<Terminal>[] = columns.map((col) =>
+    col.key === 'status'
+      ? {
+          key: 'deletedAt',
+          label: t('terminals.deletedOn', 'Deleted'),
+          render: (row: Terminal) => (
+            <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1.3 }}>
+              <span style={{ fontSize: 12.5, color: 'var(--text-primary)', fontWeight: 600 }}>
+                {row.deletedAt ? new Date(row.deletedAt).toLocaleDateString() : '—'}
+              </span>
+              <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                {row.deletedByName || '—'}
+              </span>
+            </span>
+          ),
+        }
+      : col,
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -349,7 +451,7 @@ export default function TerminalList() {
             {t('terminals.subtitle', 'Management and monitoring of fixed QR terminals')}
           </p>
         </div>
-        {(isAdminOrHr || isSuperAdmin) && (
+        {canManageTerminals && view === 'live' && (
           <Button
             onClick={() => handleOpenForm(null)}
             disabled={!canAddTerminal}
@@ -369,8 +471,36 @@ export default function TerminalList() {
         )}
       </div>
 
-      {(isAdminOrHr || isSuperAdmin) && (
+      {canManageTerminals && view === 'live' && (
         <LicenseNotice resource="terminal" licenses={licenses} enforced={enforced} />
+      )}
+
+      {/* The deleted list belongs to the Super Admin: what admins removed, kept
+          until it is restored or removed for good. */}
+      {isSuperAdmin && (
+        <div style={{ display: 'inline-flex', gap: 4, background: 'var(--surface-warm)', border: '1px solid var(--border)', borderRadius: 999, padding: 4, alignSelf: 'flex-start' }}>
+          {(['live', 'deleted'] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => {
+                setView(mode);
+                setSearchParams((prev) => { prev.set('page', '1'); return prev; });
+              }}
+              style={{
+                border: 'none', cursor: 'pointer', padding: '6px 14px', borderRadius: 999,
+                fontSize: 12.5, fontWeight: 700, fontFamily: 'var(--font-body)',
+                background: view === mode ? 'var(--primary)' : 'transparent',
+                color: view === mode ? '#fff' : 'var(--text-secondary)',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {mode === 'live' ? <CheckCircle2 size={13} /> : <Trash2 size={13} />}
+              {mode === 'live'
+                ? t('terminals.viewActive', 'Active')
+                : t('terminals.viewDeleted', 'Deleted')}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Filter bar - Search on left, Filter button on right */}
@@ -487,10 +617,10 @@ export default function TerminalList() {
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <Table
-          columns={columns}
+          columns={view === 'deleted' ? deletedColumns : columns}
           data={terminals}
           loading={loading}
-          onRowClick={(row) => handleOpenForm(row)}
+          onRowClick={view === 'deleted' ? undefined : (row) => handleOpenForm(row)}
           headerBackground="#0D2137"
           headerTextColor="#FFFFFF"
           headerBorderBottom="none"
@@ -519,6 +649,21 @@ export default function TerminalList() {
         }}
         onCancel={() => setShowForm(false)}
         onRefreshList={() => setListReloadTick(prev => prev + 1)}
+      />
+
+      <ConfirmModal
+        open={purgeTarget !== null}
+        title={t('terminals.deleteForever', 'Delete forever')}
+        message={t(
+          'terminals.deleteForeverMsg',
+          'This removes {{name}} and its credentials for good. The record of what was done stays in the audit trail. This cannot be undone.',
+          { name: purgeTarget?.name ?? '' },
+        )}
+        confirmLabel={purging ? t('common.loading') : t('terminals.deleteForever', 'Delete forever')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
+        onConfirm={() => void handlePermanentDelete()}
+        onCancel={() => setPurgeTarget(null)}
       />
 
       <TerminalFilterModal

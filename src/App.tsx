@@ -155,7 +155,7 @@ function AppRoutes() {
       } />
 
       <Route path="/terminali" element={
-        <ProtectedRoute roles={['admin', 'hr', 'area_manager', 'store_manager', 'employee']} permissionKey="terminali">
+        <ProtectedRoute roles={['admin', 'hr', 'area_manager', 'store_manager']} permissionKey="terminali">
           <Layout title={t('nav.terminals')}><TerminalList /></Layout>
         </ProtectedRoute>
       } />
