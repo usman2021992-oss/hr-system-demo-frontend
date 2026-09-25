@@ -36,17 +36,8 @@ interface CompanyOption {
   name: string;
 }
 
-const truncateChars = (str: string, max: number) => {
-  if (!str) return '';
-  return str.length > max ? `${str.slice(0, max)}...` : str;
-};
-
-const truncateWords = (str: string, max: number) => {
-  if (!str) return '';
-  const words = str.split(' ').filter(Boolean);
-  if (words.length > max) return `${words.slice(0, max).join(' ')}...`;
-  return str;
-};
+// Columns trim themselves with an ellipsis and keep the full value in a
+// tooltip, so nothing is cut at a fixed number of words or characters.
 
 type BadgeVariant = 'accent' | 'primary' | 'info' | 'success' | 'warning' | 'neutral' | 'danger';
 
@@ -283,8 +274,9 @@ export default function TerminalList() {
     {
       key: 'name',
       label: t('common.name'),
+      width: '26%',
       render: (row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           <div style={{
             width: '32px',
             height: '32px',
@@ -300,22 +292,58 @@ export default function TerminalList() {
           }}>
             {row.name.charAt(0).toUpperCase()}
           </div>
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{row.name}</span>
+          {/* Long store names used to push the store and company columns into
+              ellipsis. The name gets a fixed share and trims itself instead. */}
+          <span
+            title={row.name}
+            style={{
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0,
+            }}
+          >
+            {row.name}
+          </span>
         </div>
       ),
     },
     {
       key: 'email',
       label: 'Email',
-      render: (row) => <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{truncateChars(row.email, 15)}</span>,
+      width: '18%',
+      render: (row) => (
+        <span
+          title={row.email}
+          style={{
+            color: 'var(--text-muted)',
+            fontSize: '13px',
+            display: 'block',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {row.email}
+        </span>
+      ),
     },
     {
       key: 'storeName',
       label: t('employees.colStore'),
+      width: '22%',
       render: (row) => (
-        <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1.3 }}>
-          <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>
-            {truncateWords(row.storeName ?? '', 2)}
+        <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3, minWidth: 0 }}>
+          <span
+            title={row.storeName ?? ''}
+            style={{
+              color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}
+          >
+            {row.storeName ?? ''}
           </span>
           {/* Which clock this terminal enforces. Two shops can show the same
               opening time and still admit staff an hour apart. */}
@@ -331,7 +359,18 @@ export default function TerminalList() {
     {
       key: 'companyName',
       label: t('employees.colCompany'),
-      render: (row) => <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{truncateWords(row.companyName ?? '', 2)}</span>,
+      width: '20%',
+      render: (row) => (
+        <span
+          title={row.companyName ?? ''}
+          style={{
+            color: 'var(--text-muted)', fontSize: '13px', display: 'block',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}
+        >
+          {row.companyName ?? ''}
+        </span>
+      ),
     },
     {
       key: 'role',
